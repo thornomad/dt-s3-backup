@@ -1,0 +1,22 @@
+Version Three (01/31/09)
+
+    1. Added comment to explain why folks need to use s3+ and not s3: for Amazon buckets
+    2. Used "unset" to remove the variables at end of the script
+    3. Fixed a problem when the backup folder on S3 was nested inside another bucket
+    4. Changed the PASSPHRASE field to default to the actual passphrase, so one can easily backup the entire script and not have to worry about the passphrase.
+    5. Added --backup-this-script option which will turn the script and the secret key into an encrypted tarball that can be kept somewhere safe for easy restores if the machine goes down.
+    6. Cleaned up the get_file_size function so it wouldn't run when it wasn't supposed to.
+
+Version Two (12/03/08)
+
+   1. added GPL license
+   2. changed the cleanup feature to automatically force a full backup after (n) number of days as well as automatically cleanup after (n) number of days
+   3. added option to force cleanup after (n) number of full backups (rather than by days)
+   4. option to changed log file ownership
+   5. runtime checks for installed required software and write permissions on log directory
+   6. fixed formatting of logfile to be a little more consistent
+   7. setup everything in clever functions
+
+Version One (11/24/08)
+
+   1. Initial release.

@@ -20,8 +20,8 @@
 
 # AUTHORS:
 
-# Damon Timm <usertimm@gmail.com> <http://blog.usertimm.com> Mario
-# Santagiuliana <mario@marionline.it> <http://www.marionline.it>
+# Damon Timm <damontimm@gmail.com> <http://blog.damontimm.com> 
+# Mario Santagiuliana <mario@marionline.it> <http://www.marionline.it>
 
 # VERSION 4 NOTE (02/12/2010):
 
@@ -59,7 +59,7 @@
 
 # MORE INFORMATION:
 #
-# http://usertimm.com/code/dt-s3-backup
+# http://damontimm.com/code/dt-s3-backup
 
 # ---------------------------------------------------------------------------- #
 
@@ -87,7 +87,7 @@ ROOT="/home/"
 # NOTE: You do need to keep the "s3+http://<your location>/" format;
 # even though duplicity supports "s3://<your location>/" this script
 # needs to read the former.
-DEST="file:///home/user/new-backup-test/"
+DEST="file:///home/foobar_user_name/new-backup-test/"
 #DEST="s3+http://backup-bucket/backup-folder/"
 
 # RESTORE FOLDER
@@ -95,7 +95,7 @@ DEST="file:///home/user/new-backup-test/"
 # setup to easily be able to restore a backup by adding the 
 # "--restore" flag.  Indicate where you want the fili to restore to
 # here so you're ready to go.
-RESTORE="/home/user/restore-backup-01"
+RESTORE="/home/foobar_user_name/restore-backup-01"
 
 # INCLUDE LIST OF DIRECTORIES
 # Here is a list of directories to include; if you want to include 
@@ -106,7 +106,7 @@ RESTORE="/home/user/restore-backup-01"
 #	      "/home/www/mysql-backups" \
 #        ) 
 
-INCLIST=( "/home/user/Documents/Prose/" ) # small dir for testing
+INCLIST=( "/home/foobar_user_name/Documents/Prose/" ) # small dir for testing
 
 # EXCLUDE LIST OF DIRECTORIES
 # Even though I am being specific about what I want to include, 
@@ -148,10 +148,21 @@ CLEAN_UP_VARIABLE="2"
 # just makes it easier for me to read them and delete them as needed. 
 
 # LOGDIR="/dev/null"
-LOGDIR="/home/user/logs/test2/"
+LOGDIR="/home/foobar_user_name/logs/test2/"
 LOG_FILE="duplicity-`date +%Y-%m-%d-%M`.txt"
-LOG_FILE_OWNER="user:user"
+LOG_FILE_OWNER="foobar_user_name:foobar_user_name"
 VERBOSITY="-v3"
+
+# END OF USER EDITS
+
+
+
+
+
+
+
+
+
 
 
 ##############################################################
@@ -372,7 +383,7 @@ elif [ "$1" = "--restore-to-dir" ]; then
   OPTION="restore"
 
   if [[ ! "$2" ]]; then
-    echo "Please provide a path destination (eg. /home/users/savehere):"
+    echo "Please provide a path destination (eg. /home/user/restore-dir):"
     read -e NEWDESTINATION
     DEST=$NEWDESTINATION
     echo ">> You will restore to ${DEST} from ${ROOT}."

@@ -64,14 +64,14 @@
 # ---------------------------------------------------------------------------- #
 
 # AMAZON S3 INFORMATION
-export AWS_ACCESS_KEY_ID="foobar"
-export AWS_SECRET_ACCESS_KEY="foobar"
+export AWS_ACCESS_KEY_ID="foobar_aws_key_id"
+export AWS_SECRET_ACCESS_KEY="foobar_aws_access_key"
 
 # GPG PASSPHRASE & GPG KEY (Automatic/Cron Usage)
 # If you aren't running this from a cron, comment this line out
 # and duplicity should prompt you for your password.
-export PASSPHRASE="foobar"
-GPG_KEY="foobar"
+export PASSPHRASE="foobar_gpg_passphrase"
+GPG_KEY="foobar_gpg_key"
 
 # The ROOT of your backup (where you want the backup to start);
 # This can be / or somwhere else -- I use /home/ because all the 

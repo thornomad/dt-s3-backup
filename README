@@ -1,5 +1,12 @@
-Hello!
+**NOTE: currently, the script is undergoing some changes!  You should use version 3 (0.3) for the time being until we have all the bugs/kinks sorted out.
 
-Am in the process of preparing this project for some public input -- bear with me while I get everything in order.
+More information about this script avaiable at: http://damontimm.com/code/dt-s3-backup
 
--Damon
+TO DO:
+
+* Use "--backup" as required option and have script output "--help" when run with no options
+* Fix "--display-config" to show the full array of include/exclude options (not just one)
+* Remove the RESTORE variable from the script and only take it from inputing on the command line (thereby only needing one option "--restore" and merging it with "--restore-to-path" ... this is for simplicities sake
+* Add a README file to the "--backup-this-script" option because, if you are like me, when it is working for so long I forget what to do when it comes time to restore
+* Clean up general formatting of the script and make it pretty 
+

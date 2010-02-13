@@ -1,64 +1,77 @@
 #!/bin/bash
 # 
-# Copyright (c) 2008-2009 Damon Timm.
+# Copyright (c) 2008-2010 Damon Timm.  
+# Copyright (c) 2010 Mario Santagiuliana.
 #
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+# This program is free software: you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free Software
+# Foundation, either version 3 of the License, or (at your option) any later
+# version.
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+# details.
 #
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-# ---------------------------------------------------------------------
-#
-# Version 3 - Jan 31 2009
-# Incremental Encrypted Backups with Duplicity and Amazon S3
+# You should have received a copy of the GNU General Public License along with
+# this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# ---------------------------------------------------------------------------- #
+
+# AUTHORS:
+
+# Damon Timm <usertimm@gmail.com> <http://blog.usertimm.com> Mario
+# Santagiuliana <mario@marionline.it> <http://www.marionline.it>
+
+# VERSION 4 NOTE (02/12/2010):
+
+# **Code is still being tested - if you want the last stable version, please
+# download verion 0.3!**
+
+# ABOUT THIS SCRIPT:
 #
 # This bash script was designed to automate and simplify the remote backup
-# process using duplicity and Amazon S3.  Hopefully, after the script is 
-# configured, you can easily backup, restore, verify and clean without
-# having to remember lots of different command options.
+# process using duplicity and Amazon S3.  Hopefully, after the script is
+# configured, you can easily backup, restore, verify and clean without having
+# to remember lots of different command options.
 #
-# Furthermore, you can even automate the process of saving your script 
-# and the gpg key for your backups in a single password-protected file -- 
-# this way, you know you have everything you need for a restore, 
-# in case your machine goes down.
+# Furthermore, you can even automate the process of saving your script and the
+# gpg key for your backups in a single password-protected file -- this way, you
+# know you have everything you need for a restore, in case your machine goes
+# down.
 #
-# You can run the script from cron with no command-line options 
-# (all options set in the script itself); however, you can also run it 
-# outside of the cron with some variables for more control.
-#
-# --full: forces a full backup (instead of waiting specified number of days
-# --verify: verifies the backup (no cleanup is run)
-# --restore: restores the backup to the directory specified in the script
-# --backup-this-script: let's you backup the script and secret key to the
-#                       current working directory.
-#
-# See more info about the script online at:
-# blog.damontimm.com/bash-script-incremental-encrypted-backups-duplicity-amazon-s3/
+# You can run the script from cron with no command-line options (all options
+# set in the script itself); however, you can also run it outside of the cron
+# with some variables for more control.
 
-# TO DO:
-#   - allow command line restore options (specific files, etc)
-#   - allow command line cleanup options (# of days [30D] or full backups [2])
-#   - allow restore to specific path from the command line
+# OPTIONS:
+#
+# --full: forces a full backup (instead of waiting specified number of days)
+# --verify: verifies the backup (no cleanup is run) 
+# --restore: restores the backup to the directory specified in the script 
+# --restore-to-dir [path]: restores the backup to the specified path 
+# --restore-file [file]: restore a specific file 
+# --backup-this-script: let's you backup the script and secret key to the 
+#                       current working directory 
+# --test: This was a non-duplicity scripting test: check logfile  
+# --display-config: display directory variables configs in this script 
+# --help: display help
+
+# MORE INFORMATION:
+#
+# http://usertimm.com/code/dt-s3-backup
+
+# ---------------------------------------------------------------------------- #
 
 # AMAZON S3 INFORMATION
-export AWS_ACCESS_KEY_ID="<FOOBAR>"
-export AWS_SECRET_ACCESS_KEY="<FOOBAR>"
+export AWS_ACCESS_KEY_ID="foobar"
+export AWS_SECRET_ACCESS_KEY="foobar"
 
 # GPG PASSPHRASE & GPG KEY (Automatic/Cron Usage)
 # If you aren't running this from a cron, comment this line out
 # and duplicity should prompt you for your password.
-# I put my GPG passphrase in a text file at
-# ~/.gnupg/.gpg-passphrase and chmod it 0600.
-export PASSPHRASE="<FOOBAR>"
-GPG_KEY="<FOOBAR>"
+export PASSPHRASE="foobar"
+GPG_KEY="foobar"
 
 # The ROOT of your backup (where you want the backup to start);
 # This can be / or somwhere else -- I use /home/ because all the 
@@ -68,21 +81,21 @@ ROOT="/home/"
 # BACKUP DESTINATION INFORMATION
 # In my case, I use Amazon S3 use this - so I made up a unique
 # bucket name (you don't have to have one created, it will do it
-# for you.  If you don't want to use Amazon S3, you can backup 
+# for you).  If you don't want to use Amazon S3, you can backup 
 # to a file or any of duplicity's supported outputs.
 #
 # NOTE: You do need to keep the "s3+http://<your location>/" format;
 # even though duplicity supports "s3://<your location>/" this script
 # needs to read the former.
-#DEST="file:///home/damon/new-backup-test/"
-DEST="s3+http://backup-bucket/backup-folder/"
+DEST="file:///home/user/new-backup-test/"
+#DEST="s3+http://backup-bucket/backup-folder/"
 
 # RESTORE FOLDER
 # Being ready to restore is important to me, so I have this script
 # setup to easily be able to restore a backup by adding the 
 # "--restore" flag.  Indicate where you want the fili to restore to
 # here so you're ready to go.
-RESTORE="/home/damon/restore-backup-01"
+RESTORE="/home/user/restore-backup-01"
 
 # INCLUDE LIST OF DIRECTORIES
 # Here is a list of directories to include; if you want to include 
@@ -93,7 +106,7 @@ RESTORE="/home/damon/restore-backup-01"
 #	      "/home/www/mysql-backups" \
 #        ) 
 
-INCLIST=( "/home/damon/Documents/Scripts/" ) # small dir for testing
+INCLIST=( "/home/user/Documents/Prose/" ) # small dir for testing
 
 # EXCLUDE LIST OF DIRECTORIES
 # Even though I am being specific about what I want to include, 
@@ -102,6 +115,13 @@ EXCLIST=( "/home/*/Trash" \
 	      "/home/*/Projects/Completed" \
 	      "/**.DS_Store" "/**Icon?" "/**.AppleDouble" \ 
            ) 
+
+# STATIC BACKUP OPTIONS
+# Here you can define the static backup options that you want to run with
+# duplicity.  I use both the full-if-older-than option plus the
+# --s3-use-new-style option (for European buckets).  Be sure to separate your
+# options with appropriate spacing.
+STATIC_OPTIONS="--full-if-older-than 14D --s3-use-new-style"
 
 # FULL BACKUP & REMOVE OLDER THAN SETTINGS
 # Because duplicity will continue to add to each backup as you go,
@@ -113,16 +133,14 @@ EXCLIST=( "/home/*/Trash" \
 # all files over 31 days old.  This should leave me at least two full
 # backups available at any time, as well as a month's worth of incremental
 # data.
-
-FULL_IF_OLDER_THAN="14D"
-CLEAN_UP_TYPE="remove-older-than"
-CLEAN_UP_VARIABLE="31D"
+#CLEAN_UP_TYPE="remove-older-than"
+#CLEAN_UP_VARIABLE="31D"
 
 # If you would rather keep a certain (n) number of full backups (rather 
 # than removing the files based on their age), uncomment the following
 # two lines and select the number of full backups you want to keep.
-# CLEAN_UP_TYPE="remove-all-but-n-full"
-# CLEAN_UP_VARIABLE="5"
+CLEAN_UP_TYPE="remove-all-but-n-full"
+CLEAN_UP_VARIABLE="2"
 
 # LOGFILE INFORMATION DIRECTORY
 # Provide directory for logfile, ownership of logfile, and verbosity level.
@@ -130,10 +148,11 @@ CLEAN_UP_VARIABLE="31D"
 # just makes it easier for me to read them and delete them as needed. 
 
 # LOGDIR="/dev/null"
-LOGDIR="/home/damon/logs/test2/"
+LOGDIR="/home/user/logs/test2/"
 LOG_FILE="duplicity-`date +%Y-%m-%d-%M`.txt"
-LOG_FILE_OWNER="damon:damon"
+LOG_FILE_OWNER="user:user"
 VERBOSITY="-v3"
+
 
 ##############################################################
 # Script Happens Below This Line - Shouldn't Require Editing # 
@@ -145,18 +164,19 @@ S3CMD="$(which s3cmd)"
 NO_S3CMD="WARNING: s3cmd is not installed, remote file \
 size information unavailable."
 NO_S3CMD_CFG="WARNING: s3cmd is not configured, run 's3cmd --configure' \
-in order to retrieve remote file size information."
+in order to retrieve remote file size information. Remote file \
+size information unavailable."
 
 if [ ! -x "$DUPLICITY" ]; then
   echo "ERROR: duplicity not installed, that's gotta happen first!" >&2
   exit 1
 elif  [ `echo ${DEST} | cut -c 1,2` = "s3" ]; then
   if [ ! -x "$S3CMD" ]; then
-    echo $NO_S3CMD; S3CMD_AVAIL=FALSE
+    echo $NO_S3CMD; S3CMD_AVAIL=false
   elif [ ! -f "${HOME}/.s3cfg" ]; then
-    echo $NO_S3CMD_CFG; S3CMD_AVAIL=FALSE
+    echo $NO_S3CMD_CFG; S3CMD_AVAIL=false
   else
-    S3CMD_AVAIL=TRUE
+    S3CMD_AVAIL=true
   fi
 fi
 
@@ -190,7 +210,6 @@ get_source_file_size()
       awk '{ print $2"\t"$1 }' \
       >> ${LOGFILE}
   done
-  echo >> ${LOGFILE}
 }
 
 get_remote_file_size() 
@@ -199,9 +218,11 @@ get_remote_file_size()
   if [ `echo ${DEST} | cut -c 1,2` = "fi" ]; then
     TMPDEST=`echo ${DEST} | cut -c 6-` 
     SIZE=`du -hs ${TMPDEST} | awk '{print $1}'`	
-  elif [ `echo ${DEST} | cut -c 1,2` = "s3" ] && [ -x "$S3CMD" ]; then
+  elif [ `echo ${DEST} | cut -c 1,2` = "s3" ] &&  $S3CMD_AVAIL ; then
       TMPDEST=$(echo ${DEST} | cut -c 11-)
       SIZE=`s3cmd du -H s3://${TMPDEST} | awk '{print $1}'`
+  else
+      SIZE="s3cmd not installed."
   fi
   echo "Current Remote Backup File Size: ${SIZE}" >> ${LOGFILE}
 }
@@ -233,17 +254,14 @@ duplicity_cleanup()
 
 duplicity_backup()
 {
-  ${DUPLICITY} ${OPTION} ${FULL_IF_OLDER_THAN} \
-   ${VERBOSITY} \
-   --encrypt-key=${GPG_KEY} \
-   --sign-key=${GPG_KEY} \
-   ${EXCLUDE} \
-   ${INCLUDE} \
-   ${EXCLUDEROOT} \
-   ${ROOT} ${DEST} \
-   >> ${LOGFILE}
-   
-
+  ${DUPLICITY} ${OPTION} ${VERBOSITY} ${STATIC_OPTIONS} \
+  --encrypt-key=${GPG_KEY} \
+  --sign-key=${GPG_KEY} \
+  ${EXCLUDE} \
+  ${INCLUDE} \
+  ${EXCLUDEROOT} \
+  ${ROOT} ${DEST} \
+  >> ${LOGFILE}
 }
 
 get_file_sizes() 
@@ -290,62 +308,158 @@ backup_this_script()
   echo "gpg -d ${TMPFILENAME} | tar x"
 }
 
+check_variables ()
+{
+  if [[ ${ROOT} = "" || ${DEST} = "" || ${INCLIST} = "" || ${RESTORE} = "" ]]; then
+    echo "Check your configuration variables ROOT or DEST or INCLIST or RESTORE not defined."
+    echo -e "Check your configuration variables ROOT or DEST or INCLIST or RESTORE not defined.\n--------    END    --------" >> ${LOGFILE}
+    exit 1
+  fi
+}	# ----------  end of function check_variables  ----------
+
+echo -e "--------    START DT-S3-BACKUP SCRIPT    --------\n" >> ${LOGFILE}
 if [ "$1" = "--backup-this-script" ]; then
   backup_this_script
   exit
 elif [ "$1" = "--full" ]; then
+  check_variables
   OPTION="full"
-  FULL_IF_OLDER_THAN= 
   include_exclude
   duplicity_backup
   duplicity_cleanup
   get_file_sizes
   
 elif [ "$1" = "--verify" ]; then
+  check_variables
   OLDROOT=${ROOT}
   ROOT=${DEST}
   DEST=${OLDROOT}
   OPTION="verify"
-  FULL_IF_OLDER_THAN=
   
   echo "-------[ Verifying Source & Destination ]-------" >> ${LOGFILE}
   include_exclude
   duplicity_backup
   echo >> ${LOGFILE}
+  #restore previous condition
+  OLDROOT=${ROOT}
+  ROOT=${DEST}
+  DEST=${OLDROOT}
   get_file_sizes  
 
 elif [ "$1" = "--restore" ]; then
+  check_variables
   ROOT=$DEST
   DEST=$RESTORE
-  FULL_IF_OLDER_THAN=
-  OPTION=
+  OPTION="restore"
 
   if [ "$2" != "yes" ]; then
-    echo ">> You will restore to ${DEST}"
-    echo ">> You can override this question by executing '--verify yes' next time"
+    echo ">> You will restore to ${DEST} from ${ROOT}."
+    echo ">> You can override this question by executing '--restore yes' next time"
     echo "Are you sure you want to do that ('yes' to continue)?"
     read ANSWER
     if [ "$ANSWER" != "yes" ]; then
       echo "You said << ${ANSWER} >> so I am exiting now."
+      echo -e "--------    END    --------\n" >> ${LOGFILE}
       exit 1
     fi
     echo "Restoring now ..."
   fi
   duplicity_backup
 
+elif [ "$1" = "--restore-to-dir" ]; then
+  check_variables
+  ROOT=$DEST
+  OPTION="restore"
+
+  if [[ ! "$2" ]]; then
+    echo "Please provide a path destination (eg. /home/users/savehere):"
+    read -e NEWDESTINATION
+    DEST=$NEWDESTINATION
+    echo ">> You will restore to ${DEST} from ${ROOT}."
+    echo ">> You can override this question by executing '--restore-to-dir [directory_destination]' next time"
+    echo "Are you sure you want to do that ('yes' to continue)?"
+    read ANSWER
+    if [ "$ANSWER" != "yes" ]; then
+      echo "You said << ${ANSWER} >> so I am exiting now."
+      echo -e "--------    END    --------\n" >> ${LOGFILE}
+      exit 1
+    fi
+    echo "Restoring now ..."
+  else
+    DEST=$2
+  fi
+  duplicity_backup
+
+elif [ "$1" = "--restore-file" ]; then
+  check_variables
+  ROOT=$DEST
+  INCLUDE=
+  EXCLUDE=
+  EXLUDEROOT=
+  OPTION=
+
+  if [[ ! "$2" ]]; then
+    echo "Please provide file to restore (eg. Mail/article):"
+    read -e FILE_TO_RESTORE
+    FILE_TO_RESTORE=$FILE_TO_RESTORE
+    DEST=$FILE_TO_RESTORE
+    echo ">> You will restore your $FILE_TO_RESTORE to ${DEST} from ${ROOT}."
+    echo ">> You can override this question by executing '--restore-file [file]' next time"
+    echo "Are you sure you want to do that ('yes' to continue)?"
+    read ANSWER
+    if [ "$ANSWER" != "yes" ]; then
+      echo "You said << ${ANSWER} >> so I am exiting now."
+      echo -e "--------    END    --------\n" >> ${LOGFILE}
+      exit 1
+    fi
+    echo "Restoring now ..."
+  else
+    FILE_TO_RESTORE=$2
+  fi
+  #use INCLUDE variable without create another one
+  INCLUDE="--file-to-restore ${FILE_TO_RESTORE}"
+  DEST=$FILE_TO_RESTORE
+  duplicity_backup
+
 elif [ "$1" = "--test" ]; then
   echo "This was a non-duplicity scripting test: check logfile for file sizes."
   get_file_sizes
-else
-  OPTION="--full-if-older-than"
+elif [ "$1" = "--help" ]; then
+  echo "  Usage: 
+        `basename $0` [options]
+  
+  Options:
+    --full: forces a full backup (instead of waiting specified number of days)
+    --verify: verifies the backup (no cleanup is run)
+    --restore: restores the backup to the directory specified in the script
+    --restore-to-dir [path]: restores the backup to specified path
+    --restore-file [file]: restore a specific file
 
+    --backup-this-script: let's you backup the script and secret key to the current working directory
+
+    --test: This was a non-duplicity scripting test: check logfile for file sizes.
+    --display-config: display directory variables configs in this script
+    --help: display this help
+    "
+elif [ "$1" = "--display-config" ]; then
+  echo "Directory variables are:
+    DEST (backup destination) = ${DEST}
+    RESTORE (restore destination) = ${RESTORE}
+    INCLIST (directory that will be backup) = ${INCLIST}
+    EXCLIST (directory that will not be backup) = ${EXCLIST}
+    ROOT (root directory) = ${ROOT}
+  "
+else
+  check_variables
   include_exclude
   duplicity_backup
   duplicity_cleanup
   get_file_sizes
-
 fi
+echo -e "--------    END    --------\n" >> ${LOGFILE}
 
 unset AWS_ACCESS_KEY_ID
 unset AWS_SECRET_ACCESS_KEY
 unset PASSPHRASE
+
+# EOF

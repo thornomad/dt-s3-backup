@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/bin/bash  
+# vim: set tabstop=2 shiftwidth=2 sts=2 autoindent smartindent: 
 # 
 # Copyright (c) 2008-2010 Damon Timm.  
 # Copyright (c) 2010 Mario Santagiuliana.
@@ -44,19 +45,6 @@
 # set in the script itself); however, you can also run it outside of the cron
 # with some variables for more control.
 
-# OPTIONS:
-#
-# --full: forces a full backup (instead of waiting specified number of days)
-# --verify: verifies the backup (no cleanup is run) 
-# --restore: restores the backup to the directory specified in the script 
-# --restore-to-dir [path]: restores the backup to the specified path 
-# --restore-file [file]: restore a specific file 
-# --backup-this-script: let's you backup the script and secret key to the 
-#                       current working directory 
-# --test: This was a non-duplicity scripting test: check logfile  
-# --display-config: display directory variables configs in this script 
-# --help: display help
-
 # MORE INFORMATION:
 #
 # http://damontimm.com/code/dt-s3-backup
@@ -89,13 +77,6 @@ ROOT="/home/"
 # needs to read the former.
 DEST="file:///home/foobar_user_name/new-backup-test/"
 #DEST="s3+http://backup-bucket/backup-folder/"
-
-# RESTORE FOLDER
-# Being ready to restore is important to me, so I have this script
-# setup to easily be able to restore a backup by adding the 
-# "--restore" flag.  Indicate where you want the fili to restore to
-# here so you're ready to go.
-RESTORE="/home/foobar_user_name/restore-backup-01"
 
 # INCLUDE LIST OF DIRECTORIES
 # Here is a list of directories to include; if you want to include 
@@ -156,15 +137,6 @@ VERBOSITY="-v3"
 # END OF USER EDITS
 
 
-
-
-
-
-
-
-
-
-
 ##############################################################
 # Script Happens Below This Line - Shouldn't Require Editing # 
 ##############################################################
@@ -177,6 +149,8 @@ size information unavailable."
 NO_S3CMD_CFG="WARNING: s3cmd is not configured, run 's3cmd --configure' \
 in order to retrieve remote file size information. Remote file \
 size information unavailable."
+README_TXT="This is the README file for the backup-this-script.\n\nIt needs work still."
+CONFIG_VAR_MSG="Oops!! ${0} was unable to run!\nWe are missing one or more important variables at the top of the script.\nCheck your configuration because it appears that something has not been set yet."
 
 if [ ! -x "$DUPLICITY" ]; then
   echo "ERROR: duplicity not installed, that's gotta happen first!" >&2
@@ -221,6 +195,7 @@ get_source_file_size()
       awk '{ print $2"\t"$1 }' \
       >> ${LOGFILE}
   done
+  echo >> ${LOGFILE}
 }
 
 get_remote_file_size() 
@@ -236,6 +211,7 @@ get_remote_file_size()
       SIZE="s3cmd not installed."
   fi
   echo "Current Remote Backup File Size: ${SIZE}" >> ${LOGFILE}
+  echo >> ${LOGFILE}
 }
 
 include_exclude()
@@ -292,13 +268,14 @@ backup_this_script()
   else
     SCRIPTPATH=$(which ${0})
   fi
-  TMPDIR=DT-S3-Backup-`date +%Y-%m-%d`
+  TMPDIR=dt-s3-backup-`date +%Y-%m-%d`
   TMPFILENAME=${TMPDIR}.tar.gpg
+  README=${TMPDIR}/README
   
   echo "You are backing up: "
   echo "      1. ${SCRIPTPATH}"
-  echo "      2. GPG Secret Key: $GPG_KEY"
-  echo "Backup will be saved: `pwd`/${TMPFILENAME}"
+  echo "      2. GPG Secret Key: ${GPG_KEY}"
+  echo "Backup will be saved to: `pwd`/${TMPFILENAME}"
   echo
   echo ">> Are you sure you want to do that ('yes' to continue)?"
   read ANSWER
@@ -310,26 +287,31 @@ backup_this_script()
   mkdir -p ${TMPDIR} 
   cp $SCRIPTPATH ${TMPDIR}/ 
   gpg -a --export-secret-keys ${GPG_KEY} > ${TMPDIR}/s3-secret.key.txt
-  echo
+  echo -e ${README_TXT} > ${README}
   echo "Encrypting tarball, choose a password you'll remember..."
   tar c ${TMPDIR} | gpg -aco ${TMPFILENAME}
   rm -Rf ${TMPDIR}
   echo 
-  echo ">> To restore files, run the following (remember your password!)"
+  echo ">> To restore these files, run the following (remember your password!):"
   echo "gpg -d ${TMPFILENAME} | tar x"
 }
 
 check_variables ()
 {
-  if [[ ${ROOT} = "" || ${DEST} = "" || ${INCLIST} = "" || ${RESTORE} = "" ]]; then
-    echo "Check your configuration variables ROOT or DEST or INCLIST or RESTORE not defined."
-    echo -e "Check your configuration variables ROOT or DEST or INCLIST or RESTORE not defined.\n--------    END    --------" >> ${LOGFILE}
+  if [[ ${ROOT} = "" || ${DEST} = "" || ${INCLIST} = "" || \
+        ${AWS_ACCESS_KEY_ID} = "foobar_aws_key_id" || \
+        ${AWS_SECRET_ACCESS_KEY} = "foobar_aws_access_key" || \
+        ${GPG_KEY} = "foobar_gpg_key" || \
+        ${PASSPHRASE} = "foobar_gpg_passphrase" ]]; then
+    echo -e ${CONFIG_VAR_MSG} 
+    echo -e ${CONFIG_VAR_MSG}"\n--------    END    --------" >> ${LOGFILE}
     exit 1
   fi
-}	# ----------  end of function check_variables  ----------
+}
 
 echo -e "--------    START DT-S3-BACKUP SCRIPT    --------\n" >> ${LOGFILE}
-if [ "$1" = "--backup-this-script" ]; then
+
+if [ "$1" = "--backup-script" ]; then
   backup_this_script
   exit
 elif [ "$1" = "--full" ]; then
@@ -356,49 +338,31 @@ elif [ "$1" = "--verify" ]; then
   ROOT=${DEST}
   DEST=${OLDROOT}
   get_file_sizes  
+  echo -e "Verify complete.  Check the log file for resultst:\n${LOGFILE}"
 
 elif [ "$1" = "--restore" ]; then
-  check_variables
-  ROOT=$DEST
-  DEST=$RESTORE
-  OPTION="restore"
-
-  if [ "$2" != "yes" ]; then
-    echo ">> You will restore to ${DEST} from ${ROOT}."
-    echo ">> You can override this question by executing '--restore yes' next time"
-    echo "Are you sure you want to do that ('yes' to continue)?"
-    read ANSWER
-    if [ "$ANSWER" != "yes" ]; then
-      echo "You said << ${ANSWER} >> so I am exiting now."
-      echo -e "--------    END    --------\n" >> ${LOGFILE}
-      exit 1
-    fi
-    echo "Restoring now ..."
-  fi
-  duplicity_backup
-
-elif [ "$1" = "--restore-to-dir" ]; then
   check_variables
   ROOT=$DEST
   OPTION="restore"
 
   if [[ ! "$2" ]]; then
-    echo "Please provide a path destination (eg. /home/user/restore-dir):"
+    echo "Please provide a destination path (/home/user/restore-dir):"
     read -e NEWDESTINATION
     DEST=$NEWDESTINATION
-    echo ">> You will restore to ${DEST} from ${ROOT}."
-    echo ">> You can override this question by executing '--restore-to-dir [directory_destination]' next time"
-    echo "Are you sure you want to do that ('yes' to continue)?"
-    read ANSWER
-    if [ "$ANSWER" != "yes" ]; then
-      echo "You said << ${ANSWER} >> so I am exiting now."
-      echo -e "--------    END    --------\n" >> ${LOGFILE}
-      exit 1
-    fi
-    echo "Restoring now ..."
   else
     DEST=$2
   fi
+
+  echo ">> You will restore from ${ROOT} to ${DEST}"
+  echo "Are you sure you want to do that ('yes' to continue)?"
+  read ANSWER
+  if [[ "$ANSWER" != "yes" ]]; then
+    echo "You said << ${ANSWER} >> so I am exiting now."
+    echo -e "User aborted restore process ...\n" >> ${LOGFILE}
+    exit 1
+  fi
+
+  echo "Attempting to restore now ..."
   duplicity_backup
 
 elif [ "$1" = "--restore-file" ]; then
@@ -432,42 +396,37 @@ elif [ "$1" = "--restore-file" ]; then
   DEST=$FILE_TO_RESTORE
   duplicity_backup
 
-elif [ "$1" = "--test" ]; then
-  echo "This was a non-duplicity scripting test: check logfile for file sizes."
-  get_file_sizes
-elif [ "$1" = "--help" ]; then
-  echo "  Usage: 
-        `basename $0` [options]
-  
-  Options:
-    --full: forces a full backup (instead of waiting specified number of days)
-    --verify: verifies the backup (no cleanup is run)
-    --restore: restores the backup to the directory specified in the script
-    --restore-to-dir [path]: restores the backup to specified path
-    --restore-file [file]: restore a specific file
-
-    --backup-this-script: let's you backup the script and secret key to the current working directory
-
-    --test: This was a non-duplicity scripting test: check logfile for file sizes.
-    --display-config: display directory variables configs in this script
-    --help: display this help
-    "
-elif [ "$1" = "--display-config" ]; then
-  echo "Directory variables are:
-    DEST (backup destination) = ${DEST}
-    RESTORE (restore destination) = ${RESTORE}
-    INCLIST (directory that will be backup) = ${INCLIST}
-    EXCLIST (directory that will not be backup) = ${EXCLIST}
-    ROOT (root directory) = ${ROOT}
-  "
-else
+elif [ "$1" = "--backup" ]; then
   check_variables
   include_exclude
   duplicity_backup
   duplicity_cleanup
   get_file_sizes
+
+else
+  echo "  USAGE: 
+    `basename $0` [options]
+  
+  Options:
+    --backup: runs an incremental backup
+    --full: forces a full backup
+
+    --verify: verifies the backup (no cleanup is run)
+    --restore [path]: restores the backup to specified path
+    --restore-file [file]: restore a specific file
+
+    --backup-script: let's you backup the script and secret key to the current working directory
+
+  CURRENT VARIABLES:
+    DEST (backup destination) = ${DEST}
+    INCLIST (directories that will be backed up) = ${INCLIST[@]:0}
+    EXCLIST (directory that will not be backup) = ${EXCLIST[@]:0}
+    ROOT (root directory) = ${ROOT}
+  "
+
 fi
-echo -e "--------    END    --------\n" >> ${LOGFILE}
+
+echo -e "--------    END DT-S3-BACKUP SCRIPT    --------\n" >> ${LOGFILE}
 
 unset AWS_ACCESS_KEY_ID
 unset AWS_SECRET_ACCESS_KEY

@@ -4,10 +4,7 @@ More information about this script avaiable at: http://damontimm.com/code/dt-s3-
 
 TO DO:
 
-* Use "--backup" as required option and have script output "--help" when run with no options
-* Fix "--display-config" to show the full array of include/exclude options (not just one)
-* Remove the RESTORE variable from the script and only take it from inputing on the command line (thereby only needing one option "--restore" and merging it with "--restore-to-path" ... this is for simplicities sake
 * Add a README file to the "--backup-this-script" option because, if you are like me, when it is working for so long I forget what to do when it comes time to restore
 * Clean up general formatting of the script and make it pretty 
-* Give the "foobar" values numbers (ie, "foobar-1" "foobar-2") or something so I can use a sed file to swap my own credentials in and out without any hassle -- or, maybe use a config file ... 
 * give demo on how to use an "--archive-dir" option
+* test --restore-file (specific) option

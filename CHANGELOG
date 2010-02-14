@@ -1,3 +1,15 @@
+Version Four (0.4)
+
+	* Moved the source code to github
+	* Added command line --restore to path (rather than script specific)
+	* Added --restore-file option
+	* Changed --backup-this-script to --backup-scrip
+	* Added README to --backup-script
+	* Force use of --backup option (no accidently running the script)
+	* Script without options shows --help and current directory settings
+	* Removed the RESTORE variable from the script (command line now)
+	* Removed --test option (can't remember what it is for)
+
 Version Three (01/31/09)
 
     1. Added comment to explain why folks need to use s3+ and not s3: for Amazon buckets

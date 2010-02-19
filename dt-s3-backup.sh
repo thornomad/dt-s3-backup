@@ -377,9 +377,15 @@ elif [ "$1" = "--restore-file" ]; then
     echo "Please provide file to restore (eg. Mail/article):"
     read -e FILE_TO_RESTORE
     FILE_TO_RESTORE=$FILE_TO_RESTORE
-    DEST=$FILE_TO_RESTORE
+    echo "Would you like to provide new filename? [No/...path/new_name]:"
+		read -e DEST_PATH
+		if [ "$DEST_PATH" = "No" ]; then
+			DEST=$FILE_TO_RESTORE
+		else
+			DEST=$DEST_PATH
+		fi
     echo ">> You will restore your $FILE_TO_RESTORE to ${DEST} from ${ROOT}."
-    echo ">> You can override this question by executing '--restore-file [file]' next time"
+    echo ">> You can override this question by executing '--restore-file [file] [[path/new_name]]' next time"
     echo "Are you sure you want to do that ('yes' to continue)?"
     read ANSWER
     if [ "$ANSWER" != "yes" ]; then
@@ -390,10 +396,14 @@ elif [ "$1" = "--restore-file" ]; then
     echo "Restoring now ..."
   else
     FILE_TO_RESTORE=$2
+		if [[ "$3" ]]; then
+			DEST=$3
+		else
+			DEST=$FILE_TO_RESTORE
+		fi
   fi
   #use INCLUDE variable without create another one
   INCLUDE="--file-to-restore ${FILE_TO_RESTORE}"
-  DEST=$FILE_TO_RESTORE
   duplicity_backup
 
 elif [ "$1" = "--list-current-files" ]; then
@@ -422,7 +432,7 @@ else
 
     --verify: verifies the backup (no cleanup is run)
     --restore [path]: restores the backup to specified path
-    --restore-file [file]: restore a specific files
+    --restore-file [file] [[path/new_name]]: restore a specific files, optional you can provide a destination name
     --list-current-files: lists  the  files  currently backed up in the archive.
 
     --backup-script: let's you backup the script and secret key to the current working directory

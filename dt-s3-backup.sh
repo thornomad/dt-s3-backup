@@ -396,6 +396,15 @@ elif [ "$1" = "--restore-file" ]; then
   DEST=$FILE_TO_RESTORE
   duplicity_backup
 
+elif [ "$1" = "--list-current-files" ]; then
+  check_variables
+  OPTION="list-current-files"
+  ${DUPLICITY} ${OPTION} ${VERBOSITY} ${STATIC_OPTIONS} \
+  --encrypt-key=${GPG_KEY} \
+  --sign-key=${GPG_KEY} \
+  ${DEST}
+	echo -e "--------    END    --------\n" >> ${LOGFILE}
+
 elif [ "$1" = "--backup" ]; then
   check_variables
   include_exclude
@@ -413,7 +422,8 @@ else
 
     --verify: verifies the backup (no cleanup is run)
     --restore [path]: restores the backup to specified path
-    --restore-file [file]: restore a specific file
+    --restore-file [file]: restore a specific files
+    --list-current-files: lists  the  files  currently backed up in the archive.
 
     --backup-script: let's you backup the script and secret key to the current working directory
 

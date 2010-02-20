@@ -2,9 +2,53 @@
 
 More information about this script avaiable at: http://damontimm.com/code/dt-s3-backup
 
-TO DO:
+==TO DO==
 
 * Add a README file to the "--backup-this-script" option because, if you are like me, when it is working for so long I forget what to do when it comes time to restore
 * Clean up general formatting of the script and make it pretty 
 * give demo on how to use an "--archive-dir" option
-* test --restore-file (specific) option <--- marionline --- seem to work fine for me
+* test --restore-file (specific) option <--- marionline --- seem to work fine for me, test with little archive
+* Add --restore-dir option
+
+=== USAGE EXAMPLE ===
+You must configure the script before using it you can config it with your favorites test editor(read comments in script).
+You can put the script under bin directory of your user. If you have configured correctly your shell you will call dt-s3-backup.sh whenever you want.
+Then make the script executable with "chmod +x".
+
+==Common usage==
+
+= View help
+	$ dt-s3-backup.sh
+
+= Run an incremental backup of configured directory
+	$ dt-s3-backup.sh --backup
+
+= Restore your backup
+To restore the backup in the current work directory just run:
+	$ dt-s3-backup.sh --restore ./
+
+You can provide another directory to restore, for example: I want to restore my backup in "my_restore" folder (not created yet or existing):
+	$ dt-s3-backup.sh --restore my_restore
+
+If you don't provide a path you will prompt to answare some question to restore your backup
+
+==Special usage==
+
+= List files beckend up in the remote archive
+	$ dt-s3-backup.sh --list-current-files
+
+= Restore a specific file
+I have deleted my favourites picture file 'mygirlfriend.jpg' present in my "Pictures" home directory, I backup it with dt-s3-backup and I can restore it with:
+	$ dt-s3-backup.sh --restore-file Pictures/mygirlfriend.jpg
+
+Now mygirlfriend.jpg is under "Pictures" directory.
+But if I want to change the name when I restore it? I just need to provide a new name:
+	$ dt-s3-backup.sh --restore-file Pictures/mygirlfriend.jpg Pictures/myExgirlfriend.jpg
+
+In my Pictures directory I have myExgirlfriend.jpg.
+Attention: if "Pictures" directory doesn't exist you have got an error. You must provide an existing directory.
+	
+= Verifies the backup
+$ dt-s3-backup.sh --verify
+Then you can view the verification opening the log file (that you have previously configure).
+

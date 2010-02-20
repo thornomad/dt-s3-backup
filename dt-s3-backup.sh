@@ -349,17 +349,16 @@ elif [ "$1" = "--restore" ]; then
     echo "Please provide a destination path (/home/user/restore-dir):"
     read -e NEWDESTINATION
     DEST=$NEWDESTINATION
+		echo ">> You will restore from ${ROOT} to ${DEST}"
+		echo "Are you sure you want to do that ('yes' to continue)?"
+		read ANSWER
+		if [[ "$ANSWER" != "yes" ]]; then
+			echo "You said << ${ANSWER} >> so I am exiting now."
+			echo -e "User aborted restore process ...\n" >> ${LOGFILE}
+			exit 1
+		fi
   else
     DEST=$2
-  fi
-
-  echo ">> You will restore from ${ROOT} to ${DEST}"
-  echo "Are you sure you want to do that ('yes' to continue)?"
-  read ANSWER
-  if [[ "$ANSWER" != "yes" ]]; then
-    echo "You said << ${ANSWER} >> so I am exiting now."
-    echo -e "User aborted restore process ...\n" >> ${LOGFILE}
-    exit 1
   fi
 
   echo "Attempting to restore now ..."

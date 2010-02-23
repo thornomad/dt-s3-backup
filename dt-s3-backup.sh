@@ -405,7 +405,7 @@ elif [ "$1" = "--restore-file" ]; then
   INCLUDE="--file-to-restore ${FILE_TO_RESTORE}"
   duplicity_backup
 
-elif [ "$1" = "--list-current-files" ]; then
+elif [ "$1" = "--list-files" ]; then
   check_variables
   OPTION="list-current-files"
   ${DUPLICITY} ${OPTION} ${VERBOSITY} ${STATIC_OPTIONS} \

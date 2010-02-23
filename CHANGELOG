@@ -1,5 +1,5 @@
 Version Four (marionline)
-	* Add --list-current-files to view in the standart-output files stored in my archive
+	* Add --list-files to view in the standart-output files stored in my archive
 	* Modification on --restore: if I provide a path to --restore option I don't want to answare a confermation question too
 
 Version Four (0.4)

@@ -1,5 +1,4 @@
 #!/bin/bash  
-# vim: set tabstop=2 shiftwidth=2 sts=2 autoindent smartindent: 
 # 
 # Copyright (c) 2008-2010 Damon Timm.  
 # Copyright (c) 2010 Mario Santagiuliana.
@@ -346,7 +345,7 @@ elif [ "$1" = "--restore" ]; then
   OPTION="restore"
 
   if [[ ! "$2" ]]; then
-    echo "Please provide a destination path (/home/user/restore-dir):"
+    echo "Please provide a destination path (eg, /home/user/dir):"
     read -e NEWDESTINATION
     DEST=$NEWDESTINATION
 		echo ">> You will restore from ${ROOT} to ${DEST}"
@@ -398,7 +397,10 @@ elif [ "$1" = "--restore-file" ]; then
 		if [[ "$3" ]]; then
 			DEST=$3
 		else
-			DEST=$FILE_TO_RESTORE
+      # TODO - this restores it to the original location, I think would be
+      # better if we restored it to the current working directory if no file
+      # name is given
+      DEST=$FILE_TO_RESTORE
 		fi
   fi
   #use INCLUDE variable without create another one
@@ -431,7 +433,7 @@ else
 
     --verify: verifies the backup (no cleanup is run)
     --restore [path]: restores the backup to specified path
-    --restore-file [file] [[path/new_name]]: restore a specific files, optional you can provide a destination name
+    --restore-file [file] [path/filename]: restore a specific file, optional you can provide a destination name
     --list-current-files: lists  the  files  currently backed up in the archive.
 
     --backup-script: let's you backup the script and secret key to the current working directory
@@ -451,4 +453,5 @@ unset AWS_ACCESS_KEY_ID
 unset AWS_SECRET_ACCESS_KEY
 unset PASSPHRASE
 
+# vim: set tabstop=2 shiftwidth=2 sts=2 autoindent smartindent: 
 # EOF

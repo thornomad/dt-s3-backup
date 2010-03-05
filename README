@@ -5,10 +5,9 @@ More information about this script avaiable at: http://damontimm.com/code/dt-s3-
 ==TO DO==
 
 * Add a README file to the "--backup-this-script" option because, if you are like me, when it is working for so long I forget what to do when it comes time to restore
-* Clean up general formatting of the script and make it pretty 
-* give demo on how to use an "--archive-dir" option
-* test --restore-file (specific) option <--- marionline --- seem to work fine for me, test with little archive
 * Add --restore-dir option
+* --restore-file restores to the *original* location if not alternate location is specified ... may make more sense to have it restore the current working directory first.
+* add option to be able to restore a file from a specific time period (not just the latest version)
 
 === USAGE EXAMPLE ===
 You must configure the script before using it you can config it with your favorites test editor(read comments in script).

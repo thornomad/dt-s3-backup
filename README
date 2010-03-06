@@ -8,7 +8,7 @@ data without having to remember lots of different command options and
 passphrases.
 
 Most importantly, you can easily backup the script and your gpg key in a
-convienent passphrase-encrypted file.  This comes in in handy if/when your
+convenient passphrase-encrypted file.  This comes in in handy if/when your
 machine ever does go belly up. 
 
 More information about this script avaiable at:

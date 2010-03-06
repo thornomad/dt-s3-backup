@@ -1,53 +1,72 @@
-**NOTE: currently, the script is undergoing some changes!  You should use version 3 (0.3) for the time being until we have all the bugs/kinks sorted out.
+ABOUT THIS SCRIPT
+=================
 
-More information about this script avaiable at: http://damontimm.com/code/dt-s3-backup
+This bash script was designed to automate and simplify the remote backup
+process of duplicity on Amazon S3.  After your script is configured, you can
+easily backup, restore, verify and clean (either via cron or manually) your
+data without having to remember lots of different command options and
+passphrases.
 
-==TO DO==
+Most importantly, you can easily backup the script and your gpg key in a
+convienent passphrase-encrypted file.  This comes in in handy if/when your
+machine ever does go belly up. 
 
-* Add a README file to the "--backup-this-script" option because, if you are like me, when it is working for so long I forget what to do when it comes time to restore
-* Add --restore-dir option
-* --restore-file restores to the *original* location if not alternate location is specified ... may make more sense to have it restore the current working directory first.
-* add option to be able to restore a file from a specific time period (not just the latest version)
+More information about this script avaiable at:
+http://damontimm.com/code/dt-s3-backup
 
-=== USAGE EXAMPLE ===
-You must configure the script before using it you can config it with your favorites test editor(read comments in script).
-You can put the script under bin directory of your user. If you have configured correctly your shell you will call dt-s3-backup.sh whenever you want.
-Then make the script executable with "chmod +x".
+Latest version of the code is available at:
+http://github.com/thornomad/dt-s3-backup
 
-==Common usage==
+BEFORE YOU START
+================
 
-= View help
-	$ dt-s3-backup.sh
+This is a bash script that requires user configuration.  Instructions are in
+the file itself and should be self-explanatory.  Be sure to replace all the
+*foobar* values with your real ones.  Almost every value needs to be
+configured.
 
-= Run an incremental backup of configured directory
+After the script is configured, you can move it to /usr/local/sbin/ or wherever
+you please and run it from there.  A cron job is always nice.  Be sure to make
+the script executable (chmod +x) before you hit the gas.
+
+COMMON USAGE EXAMPLES
+=====================
+
+* View help:
+    $ dt-s3-backup.sh
+
+* Run an incremental backup:
 	$ dt-s3-backup.sh --backup
 
-= Restore your backup
-To restore the backup in the current work directory just run:
-	$ dt-s3-backup.sh --restore ./
+* Restore your entire backup:
+	$ dt-s3-backup.sh --restore 
+    You will be prompted for a restore directory
 
-You can provide another directory to restore, for example: I want to restore my backup in "my_restore" folder (not created yet or existing):
-	$ dt-s3-backup.sh --restore my_restore
+	$ dt-s3-backup.sh --restore /home/user/restore-folder
+    You can also provide a restore folder on the command line.
 
-If you don't provide a path you will prompt to answare some question to restore your backup
+* Restore a specific file in the backup:
+    $ dt-s3-backup.sh --restore-file
+    You will be prompted for a file to restore to the current directory
 
-==Special usage==
+    $ dt-s3-backup.sh --restore-file img/mom.jpg
+    Restores the file img/mom.jpg to the current directory
 
-= List files beckend up in the remote archive
+    $ dt-s3-backup.sh --restore-file img/mom.jpg /home/user/i-love-mom.jpg
+    Restores the file img/mom.jpg to /home/user/i-love-mom.jpg
+
+* List files in the remote archive
 	$ dt-s3-backup.sh --list-current-files
 
-= Restore a specific file
-I have deleted my favourites picture file 'mygirlfriend.jpg' present in my "Pictures" home directory, I backup it with dt-s3-backup and I can restore it with:
-	$ dt-s3-backup.sh --restore-file Pictures/mygirlfriend.jpg
+* Verify the backup
+    $ dt-s3-backup.sh --verify
 
-Now mygirlfriend.jpg is under "Pictures" directory.
-But if I want to change the name when I restore it? I just need to provide a new name:
-	$ dt-s3-backup.sh --restore-file Pictures/mygirlfriend.jpg Pictures/myExgirlfriend.jpg
 
-In my Pictures directory I have myExgirlfriend.jpg.
-Attention: if "Pictures" directory doesn't exist you have got an error. You must provide an existing directory.
-	
-= Verifies the backup
-$ dt-s3-backup.sh --verify
-Then you can view the verification opening the log file (that you have previously configure).
+NEXT VERSION WISH LIST
+======================
 
+* --restore-dir option
+* restore files from a specific time period 
+
+
+Thanks to Mario Santagiuliana for his help. 

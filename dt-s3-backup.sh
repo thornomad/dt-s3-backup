@@ -100,8 +100,13 @@ LOG_FILE="duplicity-`date +%Y-%m-%d-%M`.txt"
 LOG_FILE_OWNER="foobar_user_name:foobar_user_name"
 VERBOSITY="-v3"
 
-# END OF USER EDITS
-
+# TROUBLESHOOTING: If you are having any problems running this script it is
+# helpful to see the command output that is being generated to determine if the
+# script is causing a problem or if it is an issue with duplicity (or your
+# setup).  Simply  uncomment the ECHO line below and the commands will be
+# printed to the logfile.  This way, you can see if the problem is with the
+# script or with duplicity.
+#ECHO=$(which echo)
 
 ##############################################################
 # Script Happens Below This Line - Shouldn't Require Editing # 
@@ -198,7 +203,7 @@ include_exclude()
 duplicity_cleanup() 
 {
   echo "-----------[ Duplicity Cleanup ]-----------" >> ${LOGFILE}
-  ${DUPLICITY} ${CLEAN_UP_TYPE} ${CLEAN_UP_VARIABLE} --force \
+  ${ECHO} ${DUPLICITY} ${CLEAN_UP_TYPE} ${CLEAN_UP_VARIABLE} --force \
 	    --encrypt-key=${GPG_KEY} \
 	    --sign-key=${GPG_KEY} \
 	    ${DEST} >> ${LOGFILE}
@@ -207,7 +212,7 @@ duplicity_cleanup()
 
 duplicity_backup()
 {
-  ${DUPLICITY} ${OPTION} ${VERBOSITY} ${STATIC_OPTIONS} \
+  ${ECHO} ${DUPLICITY} ${OPTION} ${VERBOSITY} ${STATIC_OPTIONS} \
   --encrypt-key=${GPG_KEY} \
   --sign-key=${GPG_KEY} \
   ${EXCLUDE} \
@@ -413,9 +418,12 @@ fi
 
 echo -e "--------    END DT-S3-BACKUP SCRIPT    --------\n" >> ${LOGFILE}
 
+if [ ${ECHO} ]; then
+  echo "TEST RUN ONLY: Check the logfile for command output."
+fi
+
 unset AWS_ACCESS_KEY_ID
 unset AWS_SECRET_ACCESS_KEY
 unset PASSPHRASE
 
 # vim: set tabstop=2 shiftwidth=2 sts=2 autoindent smartindent: 
-# EOF

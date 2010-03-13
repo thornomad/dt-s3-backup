@@ -35,7 +35,7 @@ REQUIREMENTS
 
 * duplicity
 * gpg
-* Amazon S3 account
+* Amazon S3 
 * s3cmd (optional)
 
 COMMON USAGE EXAMPLES

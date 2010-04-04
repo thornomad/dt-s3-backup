@@ -1,38 +1,41 @@
-Version Four (marionline)
-	* Add --list-files to view in the standart-output files stored in my archive
-	* Modification on --restore: if I provide a path to --restore option I don't want to answare a confermation question too
-
-Version Four (0.4)
+0.4 Version Four (03/13/10)
+===========================
 
 	* Moved the source code to github
-	* Added command line --restore to path (rather than script specific)
-	* Added --restore-file option
+	* Add --list-files to view in the standart-output files stored in my archive [mariononline]
+	* Added ECHO command to troublshoot the code when needed
+	* Added command line --restore to path & removed RESTORE variable [mariononline]
+	* Added --restore-file option [mariononline]
 	* Changed --backup-this-script to --backup-scrip
 	* Added README to --backup-script
 	* Force use of --backup option (no accidently running the script)
+	* Added help text to the command line script itself [mariononline]
 	* Script without options shows --help and current directory settings
-	* Removed the RESTORE variable from the script (command line now)
-	* Removed --test option (can't remember what it is for)
+	* Script checks to make sure you have put some variables in before it runs [mariononline]
+	* A number of other minor changes
 
 Version Three (01/31/09)
+========================
 
-    1. Added comment to explain why folks need to use s3+ and not s3: for Amazon buckets
-    2. Used "unset" to remove the variables at end of the script
-    3. Fixed a problem when the backup folder on S3 was nested inside another bucket
-    4. Changed the PASSPHRASE field to default to the actual passphrase, so one can easily backup the entire script and not have to worry about the passphrase.
-    5. Added --backup-this-script option which will turn the script and the secret key into an encrypted tarball that can be kept somewhere safe for easy restores if the machine goes down.
-    6. Cleaned up the get_file_size function so it wouldn't run when it wasn't supposed to.
+	* Added comment to explain why folks need to use 's3+' and not 's3:' for Amazon buckets
+	* Used "unset" to remove the variables at end of the script
+	* Fixed a problem when the backup folder on S3 was nested inside another bucket
+	* Changed the PASSPHRASE field to default to the actual passphrase, so one can easily backup the entire script and not have to worry about the passphrase.
+	* Added --backup-this-script option which will turn the script and the secret key into an encrypted tarball that can be kept somewhere safe for easy restores if the machine goes down.
+	* Cleaned up the get_file_size function so it wouldn't run when it wasn't supposed to.
 
 Version Two (12/03/08)
+======================
 
-   1. added GPL license
-   2. changed the cleanup feature to automatically force a full backup after (n) number of days as well as automatically cleanup after (n) number of days
-   3. added option to force cleanup after (n) number of full backups (rather than by days)
-   4. option to changed log file ownership
-   5. runtime checks for installed required software and write permissions on log directory
-   6. fixed formatting of logfile to be a little more consistent
-   7. setup everything in clever functions
+	* added GPL license
+	* changed the cleanup feature to automatically force a full backup after (n) number of days as well as automatically cleanup after (n) number of days
+	* added option to force cleanup after (n) number of full backups (rather than by days)
+	* option to changed log file ownership
+	* runtime checks for installed required software and write permissions on log directory
+	* fixed formatting of logfile to be a little more consistent
+	* setup everything in clever functions
 
 Version One (11/24/08)
+======================
 
-   1. Initial release.
+* Initial release.

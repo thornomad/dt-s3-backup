@@ -20,14 +20,23 @@ http://github.com/thornomad/dt-s3-backup
 BEFORE YOU START
 ================
 
-This is a bash script that requires user configuration.  Instructions are in
+This script requires user configuration.  Instructions are in
 the file itself and should be self-explanatory.  Be sure to replace all the
 *foobar* values with your real ones.  Almost every value needs to be
-configured.
+configured in someway.
 
-After the script is configured, you can move it to /usr/local/sbin/ or wherever
-you please and run it from there.  A cron job is always nice.  Be sure to make
-the script executable (chmod +x) before you hit the gas.
+You can use multiple copies of the script with different settings for different
+backup scenarios.  It is designed to run as a cron job and will log information
+to a text file (including remote file sizes, if you have s3cmd installed).  Be
+sure to make the script executable (chmod +x) before you hit the gas.
+
+REQUIREMENTS
+============
+
+* duplicity
+* gpg
+* Amazon S3 
+* s3cmd (optional)
 
 COMMON USAGE EXAMPLES
 =====================
@@ -37,6 +46,9 @@ COMMON USAGE EXAMPLES
 
 * Run an incremental backup:
 	$ dt-s3-backup.sh --backup
+
+* Force a one-off full backup:
+    $ dt-s3-backup.sh --full
 
 * Restore your entire backup:
 	$ dt-s3-backup.sh --restore 
@@ -61,6 +73,8 @@ COMMON USAGE EXAMPLES
 * Verify the backup
     $ dt-s3-backup.sh --verify
 
+* Backup the script and gpg key (for safekeeping)
+    $ dt-s3-backup.sh --backup-script
 
 NEXT VERSION WISH LIST
 ======================

@@ -393,7 +393,7 @@ elif [ "$1" = "--backup" ]; then
   get_file_sizes
 
 else
-	echo -e "[Only show `basename $0` usage options]\n" >> ${LOGFILE}
+  echo -e "[Only show `basename $0` usage options]\n" >> ${LOGFILE}
   echo "  USAGE: 
     `basename $0` [options]
   

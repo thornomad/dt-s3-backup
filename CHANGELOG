@@ -2,16 +2,16 @@
 ===========================
 
 	* Moved the source code to github
-	* Add --list-files to view in the standart-output files stored in my archive [mariononline]
+	* Add --list-files to view in the standart-output files stored in my archive [marionline]
 	* Added ECHO command to troublshoot the code when needed
-	* Added command line --restore to path & removed RESTORE variable [mariononline]
-	* Added --restore-file option [mariononline]
+	* Added command line --restore to path & removed RESTORE variable [marionline]
+	* Added --restore-file option [marionline]
 	* Changed --backup-this-script to --backup-scrip
 	* Added README to --backup-script
 	* Force use of --backup option (no accidently running the script)
-	* Added help text to the command line script itself [mariononline]
+	* Added help text to the command line script itself [marionline]
 	* Script without options shows --help and current directory settings
-	* Script checks to make sure you have put some variables in before it runs [mariononline]
+	* Script checks to make sure you have put some variables in before it runs [marionline]
 	* A number of other minor changes
 
 Version Three (01/31/09)

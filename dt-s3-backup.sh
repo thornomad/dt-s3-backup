@@ -96,7 +96,7 @@ CLEAN_UP_VARIABLE="2"
 # just makes it easier for me to read them and delete them as needed. 
 
 LOGDIR="/home/foobar_user_name/logs/test2/"
-LOG_FILE="duplicity-`date +%Y-%m-%d-%M`.txt"
+LOG_FILE="duplicity-`date +%Y-%m-%d_%H-%M`.txt"
 LOG_FILE_OWNER="foobar_user_name:foobar_user_name"
 VERBOSITY="-v3"
 

@@ -1,0 +1,109 @@
+From 4e00543450cbfc6a25c64b929cc538945f57eacf Mon Sep 17 00:00:00 2001
+From: Razvan Marescu <rmarescu@gmail.com>
+Date: Tue, 7 Dec 2010 20:58:50 -0800
+Subject: [PATCH] New feature - email alert using mailx
+
+---
+ README          |   16 ++++++++++------
+ dt-s3-backup.sh |   24 ++++++++++++++++++++++++
+ 2 files changed, 34 insertions(+), 6 deletions(-)
+
+diff --git a/README b/README
+index 83ec4bb..3cb90bb 100644
+--- a/README
++++ b/README
+@@ -9,7 +9,10 @@ passphrases.
+ 
+ Most importantly, you can easily backup the script and your gpg key in a
+ convenient passphrase-encrypted file.  This comes in in handy if/when your
+-machine ever does go belly up. 
++machine ever does go belly up.
++
++Optionally, you can set up an email address where the log file will be sent.
++Useful when the script is used via cron.
+ 
+ More information about this script avaiable at:
+ http://damontimm.com/code/dt-s3-backup
+@@ -35,8 +38,9 @@ REQUIREMENTS
+ 
+ * duplicity
+ * gpg
+-* Amazon S3 
++* Amazon S3
+ * s3cmd (optional)
++* mailx (optional)
+ 
+ COMMON USAGE EXAMPLES
+ =====================
+@@ -51,7 +55,7 @@ COMMON USAGE EXAMPLES
+     $ dt-s3-backup.sh --full
+ 
+ * Restore your entire backup:
+-	$ dt-s3-backup.sh --restore 
++	$ dt-s3-backup.sh --restore
+     You will be prompted for a restore directory
+ 
+ 	$ dt-s3-backup.sh --restore /home/user/restore-folder
+@@ -80,7 +84,7 @@ NEXT VERSION WISH LIST
+ ======================
+ 
+ * --restore-dir option
+-* restore files from a specific time period 
+-
++* restore files from a specific time period
++* support multiple MTAs for the email alert feature
+ 
+-Thanks to Mario Santagiuliana for his help. 
++Thanks to Mario Santagiuliana for his help.
+diff --git a/dt-s3-backup.sh b/dt-s3-backup.sh
+index 2afd982..e38efa8 100755
+--- a/dt-s3-backup.sh
++++ b/dt-s3-backup.sh
+@@ -100,6 +100,18 @@ LOG_FILE="duplicity-`date +%Y-%m-%d_%H-%M`.txt"
+ LOG_FILE_OWNER="foobar_user_name:foobar_user_name"
+ VERBOSITY="-v3"
+ 
++# EMAIL ALERT
++# Provide an email address to receive the logfile by email. If no email 
++# address is provided, no alert will be sent. 
++# You can set a custom from email address and a custom subject (both optionally)
++# If no value is provided for the subject, the following value will be 
++# used by default: "DT-S3 Alert ${LOG_FILE}"
++# MTA used: mailx
++#EMAIL="admin@example.com"
++EMAIL_TO=
++EMAIL_FROM=
++EMAIL_SUBJECT=
++
+ # TROUBLESHOOTING: If you are having any problems running this script it is
+ # helpful to see the command output that is being generated to determine if the
+ # script is causing a problem or if it is an issue with duplicity (or your
+@@ -114,6 +126,7 @@ VERBOSITY="-v3"
+ LOGFILE="${LOGDIR}${LOG_FILE}"
+ DUPLICITY="$(which duplicity)"
+ S3CMD="$(which s3cmd)"
++MAIL="$(which mailx)"
+ 
+ NO_S3CMD="WARNING: s3cmd is not installed, remote file \
+ size information unavailable."
+@@ -419,6 +432,17 @@ fi
+ 
+ echo -e "--------    END DT-S3-BACKUP SCRIPT    --------\n" >> ${LOGFILE}
+ 
++if [ $EMAIL_TO ]; then
++	if [ ! -x "$MAIL" ]; then
++		echo -e "Email coulnd't be sent. mailx not available." >> ${LOGFILE}
++	else
++		EMAIL_FROM=${EMAIL_FROM:+"-r ${EMAIL_FROM}"}
++		EMAIL_SUBJECT=${EMAIL_SUBJECT:="DT-S3 Alert ${LOG_FILE}"}
++		${MAIL} -s """${EMAIL_SUBJECT}""" $EMAIL_FROM ${EMAIL_TO} < ${LOGFILE}
++		echo -e "Email alert sent to ${EMAIL_TO} using ${MAIL}" >> ${LOGFILE}
++	fi
++fi
++
+ if [ ${ECHO} ]; then
+   echo "TEST RUN ONLY: Check the logfile for command output."
+ fi
+-- 
+1.7.3.1.msysgit.0
+

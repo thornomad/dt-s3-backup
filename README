@@ -11,8 +11,8 @@ Most importantly, you can easily backup the script and your gpg key in a
 convenient passphrase-encrypted file.  This comes in in handy if/when your
 machine ever does go belly up.
 
-Optionally, you can set up an email address where the log file will be sent.
-Useful when the script is used via cron.
+Optionally, you can set up an email address where the log file will be sent,
+which is useful when the script is used via cron.
 
 More information about this script avaiable at:
 http://damontimm.com/code/dt-s3-backup
@@ -80,6 +80,21 @@ COMMON USAGE EXAMPLES
 * Backup the script and gpg key (for safekeeping)
     $ dt-s3-backup.sh --backup-script
 
+TROUBLESHOOTING
+===============
+
+This script attempts to simplify the task of running a duplicity command; if you
+are having any problems with the script the first step is to determine if the
+script is generating an incorrect command or if duplicity itself is
+causing your error.
+
+To see exactly what is happening when you run dt-s3-backup, head to the bottom
+of the user configuration portion of the script and uncomment the `ECHO=$(which
+echo)` variable.  This will stop the script from running and will, instead,
+output the generated command into your log file. You can then check to see if
+what is being generated is causing an error or if it is duplicity causing you
+woe.
+
 NEXT VERSION WISH LIST
 ======================
 
@@ -87,4 +102,4 @@ NEXT VERSION WISH LIST
 * restore files from a specific time period
 * support multiple MTAs for the email alert feature
 
-Thanks to Mario Santagiuliana for his help.
+Thanks to Mario Santagiuliana and Razvan for their help.

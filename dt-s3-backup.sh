@@ -1,6 +1,6 @@
-#!/bin/bash  
-# 
-# Copyright (c) 2008-2010 Damon Timm.  
+#!/bin/bash
+#
+# Copyright (c) 2008-2010 Damon Timm.
 # Copyright (c) 2010 Mario Santagiuliana.
 #
 # This program is free software: you can redistribute it and/or modify it under
@@ -34,14 +34,14 @@ export PASSPHRASE="foobar_gpg_passphrase"
 GPG_KEY="foobar_gpg_key"
 
 # The ROOT of your backup (where you want the backup to start);
-# This can be / or somwhere else -- I use /home/ because all the 
+# This can be / or somwhere else -- I use /home/ because all the
 # directories start with /home/ that I want to backup.
 ROOT="/home/"
 
 # BACKUP DESTINATION INFORMATION
 # In my case, I use Amazon S3 use this - so I made up a unique
 # bucket name (you don't have to have one created, it will do it
-# for you).  If you don't want to use Amazon S3, you can backup 
+# for you).  If you don't want to use Amazon S3, you can backup
 # to a file or any of duplicity's supported outputs.
 #
 # NOTE: You do need to keep the "s3+http://<your location>/" format
@@ -50,23 +50,26 @@ ROOT="/home/"
 DEST="file:///home/foobar_user_name/new-backup-test/"
 
 # INCLUDE LIST OF DIRECTORIES
-# Here is a list of directories to include; if you want to include 
+# Here is a list of directories to include; if you want to include
 # everything that is in root, you could leave this list empty (I think).
-#INCLIST=( "/home/*/Documents" \ 
-#    	  "/home/*/Projects" \
-#	      "/home/*/logs" \
-#	      "/home/www/mysql-backups" \
-#        ) 
-
-INCLIST=( "/home/foobar_user_name/Documents/Prose/" ) # small dir for testing
+#
+# Here is an example with multiple locations:
+#INCLIST=(  "/home/*/Documents" \
+#           "/home/*/Projects" \
+#           "/home/*/logs" \
+#           "/home/www/mysql-backups" \
+#        )
+#
+# Simpler example with one location:
+INCLIST=( "/home/foobar_user_name/Documents/Prose/" ) 
 
 # EXCLUDE LIST OF DIRECTORIES
-# Even though I am being specific about what I want to include, 
-# there is still a lot of stuff I don't need.           
-EXCLIST=( "/home/*/Trash" \
-	      "/home/*/Projects/Completed" \
-	      "/**.DS_Store" "/**Icon?" "/**.AppleDouble" \ 
-           ) 
+# Even though I am being specific about what I want to include,
+# there is still a lot of stuff I don't need.
+EXCLIST=(   "/home/*/Trash" \
+            "/home/*/Projects/Completed" \
+            "/**.DS_Store" "/**Icon?" "/**.AppleDouble" \
+        )
 
 # STATIC BACKUP OPTIONS
 # Here you can define the static backup options that you want to run with
@@ -77,7 +80,7 @@ STATIC_OPTIONS="--full-if-older-than 14D --s3-use-new-style"
 
 # FULL BACKUP & REMOVE OLDER THAN SETTINGS
 # Because duplicity will continue to add to each backup as you go,
-# it will eventually create a very large set of files.  Also, incremental 
+# it will eventually create a very large set of files.  Also, incremental
 # backups leave room for problems in the chain, so doing a "full"
 # backup every so often isn't not a bad idea.
 #
@@ -85,26 +88,26 @@ STATIC_OPTIONS="--full-if-older-than 14D --s3-use-new-style"
 #CLEAN_UP_TYPE="remove-older-than"
 #CLEAN_UP_VARIABLE="31D"
 
-# Or, If you would rather keep a certain (n) number of full backups (rather 
+# Or, If you would rather keep a certain (n) number of full backups (rather
 # than removing the files based on their age), you can use what I use:
 CLEAN_UP_TYPE="remove-all-but-n-full"
 CLEAN_UP_VARIABLE="2"
 
 # LOGFILE INFORMATION DIRECTORY
 # Provide directory for logfile, ownership of logfile, and verbosity level.
-# I run this script as root, but save the log files under my user name -- 
-# just makes it easier for me to read them and delete them as needed. 
+# I run this script as root, but save the log files under my user name --
+# just makes it easier for me to read them and delete them as needed.
 
 LOGDIR="/home/foobar_user_name/logs/test2/"
 LOG_FILE="duplicity-`date +%Y-%m-%d_%H-%M`.txt"
 LOG_FILE_OWNER="foobar_user_name:foobar_user_name"
 VERBOSITY="-v3"
 
-# EMAIL ALERT
-# Provide an email address to receive the logfile by email. If no email 
-# address is provided, no alert will be sent. 
+# EMAIL ALERT (*thanks: rmarescu*)
+# Provide an email address to receive the logfile by email. If no email
+# address is provided, no alert will be sent.
 # You can set a custom from email address and a custom subject (both optionally)
-# If no value is provided for the subject, the following value will be 
+# If no value is provided for the subject, the following value will be
 # used by default: "DT-S3 Alert ${LOG_FILE}"
 # MTA used: mailx
 #EMAIL="admin@example.com"
@@ -121,7 +124,7 @@ EMAIL_SUBJECT=
 #ECHO=$(which echo)
 
 ##############################################################
-# Script Happens Below This Line - Shouldn't Require Editing # 
+# Script Happens Below This Line - Shouldn't Require Editing #
 ##############################################################
 LOGFILE="${LOGDIR}${LOG_FILE}"
 DUPLICITY="$(which duplicity)"
@@ -164,14 +167,14 @@ elif [ ! -w ${LOGDIR} ]; then
   exit 1
 fi
 
-get_source_file_size() 
+get_source_file_size()
 {
   echo "---------[ Source File Size Information ]---------" >> ${LOGFILE}
 
   for exclude in ${EXCLIST[@]}; do
     DUEXCLIST="${DUEXCLIST}${exclude}\n"
   done
-  
+
   for include in ${INCLIST[@]}
     do
       echo -e $DUEXCLIST | \
@@ -182,12 +185,12 @@ get_source_file_size()
   echo >> ${LOGFILE}
 }
 
-get_remote_file_size() 
+get_remote_file_size()
 {
   echo "------[ Destination File Size Information ]------" >> ${LOGFILE}
   if [ `echo ${DEST} | cut -c 1,2` = "fi" ]; then
-    TMPDEST=`echo ${DEST} | cut -c 6-` 
-    SIZE=`du -hs ${TMPDEST} | awk '{print $1}'`	
+    TMPDEST=`echo ${DEST} | cut -c 6-`
+    SIZE=`du -hs ${TMPDEST} | awk '{print $1}'`
   elif [ `echo ${DEST} | cut -c 1,2` = "s3" ] &&  $S3CMD_AVAIL ; then
       TMPDEST=$(echo ${DEST} | cut -c 11-)
       SIZE=`s3cmd du -H s3://${TMPDEST} | awk '{print $1}'`
@@ -209,18 +212,18 @@ include_exclude()
       do
       TMP=" --exclude "$exclude
       EXCLUDE=$EXCLUDE$TMP
-    done  
+    done
     EXCLUDEROOT="--exclude=**"
 }
 
-duplicity_cleanup() 
+duplicity_cleanup()
 {
   echo "-----------[ Duplicity Cleanup ]-----------" >> ${LOGFILE}
   ${ECHO} ${DUPLICITY} ${CLEAN_UP_TYPE} ${CLEAN_UP_VARIABLE} --force \
 	    --encrypt-key=${GPG_KEY} \
 	    --sign-key=${GPG_KEY} \
 	    ${DEST} >> ${LOGFILE}
-  echo >> ${LOGFILE}    
+  echo >> ${LOGFILE}
 }
 
 duplicity_backup()
@@ -235,7 +238,7 @@ duplicity_backup()
   >> ${LOGFILE}
 }
 
-get_file_sizes() 
+get_file_sizes()
 {
   get_source_file_size
   get_remote_file_size
@@ -255,7 +258,7 @@ backup_this_script()
   TMPDIR=dt-s3-backup-`date +%Y-%m-%d`
   TMPFILENAME=${TMPDIR}.tar.gpg
   README=${TMPDIR}/README
-  
+
   echo "You are backing up: "
   echo "      1. ${SCRIPTPATH}"
   echo "      2. GPG Secret Key: ${GPG_KEY}"
@@ -268,8 +271,8 @@ backup_this_script()
     exit 1
   fi
 
-  mkdir -p ${TMPDIR} 
-  cp $SCRIPTPATH ${TMPDIR}/ 
+  mkdir -p ${TMPDIR}
+  cp $SCRIPTPATH ${TMPDIR}/
   gpg -a --export-secret-keys ${GPG_KEY} > ${TMPDIR}/s3-secret.key.txt
   echo -e ${README_TXT} > ${README}
   echo "Encrypting tarball, choose a password you'll remember..."
@@ -288,7 +291,7 @@ check_variables ()
         ${AWS_SECRET_ACCESS_KEY} = "foobar_aws_access_key" || \
         ${GPG_KEY} = "foobar_gpg_key" || \
         ${PASSPHRASE} = "foobar_gpg_passphrase" ]]; then
-    echo -e ${CONFIG_VAR_MSG} 
+    echo -e ${CONFIG_VAR_MSG}
     echo -e ${CONFIG_VAR_MSG}"\n--------    END    --------" >> ${LOGFILE}
     exit 1
   fi
@@ -306,14 +309,14 @@ elif [ "$1" = "--full" ]; then
   duplicity_backup
   duplicity_cleanup
   get_file_sizes
-  
+
 elif [ "$1" = "--verify" ]; then
   check_variables
   OLDROOT=${ROOT}
   ROOT=${DEST}
   DEST=${OLDROOT}
   OPTION="verify"
-  
+
   echo -e "-------[ Verifying Source & Destination ]-------\n" >> ${LOGFILE}
   include_exclude
   duplicity_backup
@@ -321,9 +324,9 @@ elif [ "$1" = "--verify" ]; then
   OLDROOT=${ROOT}
   ROOT=${DEST}
   DEST=${OLDROOT}
-  
-  get_file_sizes  
-  
+
+  get_file_sizes
+
   echo -e "Verify complete.  Check the log file for results:\n>> ${LOGFILE}"
 
 elif [ "$1" = "--restore" ]; then
@@ -407,9 +410,9 @@ elif [ "$1" = "--backup" ]; then
 
 else
   echo -e "[Only show `basename $0` usage options]\n" >> ${LOGFILE}
-  echo "  USAGE: 
+  echo "  USAGE:
     `basename $0` [options]
-  
+
   Options:
     --backup: runs an incremental backup
     --full: forces a full backup
@@ -451,4 +454,4 @@ unset AWS_ACCESS_KEY_ID
 unset AWS_SECRET_ACCESS_KEY
 unset PASSPHRASE
 
-# vim: set tabstop=2 shiftwidth=2 sts=2 autoindent smartindent: 
+# vim: set tabstop=2 shiftwidth=2 sts=2 autoindent smartindent:

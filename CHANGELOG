@@ -1,3 +1,9 @@
+0.5 Version Five (05/09/11)
+===========================
+
+    * added ability to email log using `mailx`
+    * added `%H` (hour) to default logfile name
+
 0.4 Version Four (03/13/10)
 ===========================
 

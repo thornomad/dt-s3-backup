@@ -9,7 +9,10 @@ passphrases.
 
 Most importantly, you can easily backup the script and your gpg key in a
 convenient passphrase-encrypted file.  This comes in in handy if/when your
-machine ever does go belly up. 
+machine ever does go belly up.
+
+Optionally, you can set up an email address where the log file will be sent.
+Useful when the script is used via cron.
 
 More information about this script avaiable at:
 http://damontimm.com/code/dt-s3-backup
@@ -35,8 +38,9 @@ REQUIREMENTS
 
 * duplicity
 * gpg
-* Amazon S3 
+* Amazon S3
 * s3cmd (optional)
+* mailx (optional)
 
 COMMON USAGE EXAMPLES
 =====================
@@ -51,7 +55,7 @@ COMMON USAGE EXAMPLES
     $ dt-s3-backup.sh --full
 
 * Restore your entire backup:
-	$ dt-s3-backup.sh --restore 
+	$ dt-s3-backup.sh --restore
     You will be prompted for a restore directory
 
 	$ dt-s3-backup.sh --restore /home/user/restore-folder
@@ -80,7 +84,7 @@ NEXT VERSION WISH LIST
 ======================
 
 * --restore-dir option
-* restore files from a specific time period 
+* restore files from a specific time period
+* support multiple MTAs for the email alert feature
 
-
-Thanks to Mario Santagiuliana for his help. 
+Thanks to Mario Santagiuliana for his help.

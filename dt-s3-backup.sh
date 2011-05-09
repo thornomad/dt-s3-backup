@@ -96,9 +96,21 @@ CLEAN_UP_VARIABLE="2"
 # just makes it easier for me to read them and delete them as needed. 
 
 LOGDIR="/home/foobar_user_name/logs/test2/"
-LOG_FILE="duplicity-`date +%Y-%m-%d-%M`.txt"
+LOG_FILE="duplicity-`date +%Y-%m-%d_%H-%M`.txt"
 LOG_FILE_OWNER="foobar_user_name:foobar_user_name"
 VERBOSITY="-v3"
+
+# EMAIL ALERT
+# Provide an email address to receive the logfile by email. If no email 
+# address is provided, no alert will be sent. 
+# You can set a custom from email address and a custom subject (both optionally)
+# If no value is provided for the subject, the following value will be 
+# used by default: "DT-S3 Alert ${LOG_FILE}"
+# MTA used: mailx
+#EMAIL="admin@example.com"
+EMAIL_TO=
+EMAIL_FROM=
+EMAIL_SUBJECT=
 
 # TROUBLESHOOTING: If you are having any problems running this script it is
 # helpful to see the command output that is being generated to determine if the
@@ -114,6 +126,7 @@ VERBOSITY="-v3"
 LOGFILE="${LOGDIR}${LOG_FILE}"
 DUPLICITY="$(which duplicity)"
 S3CMD="$(which s3cmd)"
+MAIL="$(which mailx)"
 
 NO_S3CMD="WARNING: s3cmd is not installed, remote file \
 size information unavailable."
@@ -418,6 +431,17 @@ else
 fi
 
 echo -e "--------    END DT-S3-BACKUP SCRIPT    --------\n" >> ${LOGFILE}
+
+if [ $EMAIL_TO ]; then
+	if [ ! -x "$MAIL" ]; then
+		echo -e "Email coulnd't be sent. mailx not available." >> ${LOGFILE}
+	else
+		EMAIL_FROM=${EMAIL_FROM:+"-r ${EMAIL_FROM}"}
+		EMAIL_SUBJECT=${EMAIL_SUBJECT:="DT-S3 Alert ${LOG_FILE}"}
+		${MAIL} -s """${EMAIL_SUBJECT}""" $EMAIL_FROM ${EMAIL_TO} < ${LOGFILE}
+		echo -e "Email alert sent to ${EMAIL_TO} using ${MAIL}" >> ${LOGFILE}
+	fi
+fi
 
 if [ ${ECHO} ]; then
   echo "TEST RUN ONLY: Check the logfile for command output."

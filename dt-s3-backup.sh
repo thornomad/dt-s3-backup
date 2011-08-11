@@ -235,7 +235,7 @@ duplicity_cleanup()
 {
   echo "-----------[ Duplicity Cleanup ]-----------" >> ${LOGFILE}
   ${ECHO} ${DUPLICITY} ${CLEAN_UP_TYPE} ${CLEAN_UP_VARIABLE} --force \
-	    $ENCRYPT \
+	    ${ENCRYPT} \
 	    ${DEST} >> ${LOGFILE}
   echo >> ${LOGFILE}
 }
@@ -243,7 +243,7 @@ duplicity_cleanup()
 duplicity_backup()
 {
   ${ECHO} ${DUPLICITY} ${OPTION} ${VERBOSITY} ${STATIC_OPTIONS} \
-  $ENCRYPT \
+  ${ENCRYPT} \
   ${EXCLUDE} \
   ${INCLUDE} \
   ${EXCLUDEROOT} \

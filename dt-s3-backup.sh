@@ -23,20 +23,26 @@
 # ---------------------------------------------------------------------------- #
 
 # AMAZON S3 INFORMATION
-export AWS_ACCESS_KEY_ID="foobar_aws_key_id"
-export AWS_SECRET_ACCESS_KEY="foobar_aws_access_key"
+# Comment out this lines if you're not using S3
+#export AWS_ACCESS_KEY_ID=" "
+#export AWS_SECRET_ACCESS_KEY=" "
 
 # If you aren't running this from a cron, comment this line out
 # and duplicity should prompt you for your password.
-export PASSPHRASE="foobar_gpg_passphrase"
+# Comment out if you're not using encryption
+#export PASSPHRASE="foobar_gpg_passphrase"
 
 # Specify which GPG key you would like to use (even if you have only one).
-GPG_KEY="foobar_gpg_key"
+# Comment out if you're not using encryption
+#GPG_KEY=" "
+
+# Do you want your backup to be encrypted? yes/no
+ENCRYPTION='no'
 
 # The ROOT of your backup (where you want the backup to start);
 # This can be / or somwhere else -- I use /home/ because all the
 # directories start with /home/ that I want to backup.
-ROOT="/home/"
+ROOT="/"
 
 # BACKUP DESTINATION INFORMATION
 # In my case, I use Amazon S3 use this - so I made up a unique
@@ -47,7 +53,12 @@ ROOT="/home/"
 # NOTE: You do need to keep the "s3+http://<your location>/" format
 # even though duplicity supports "s3://<your location>/".
 #DEST="s3+http://backup-bucket/backup-folder/"
-DEST="file:///home/foobar_user_name/new-backup-test/"
+
+# Other possible locations
+#DEST="ftp://user[:password]@other.host[:port]/some_dir"
+#DEST="rsync://user@host.com[:port]//absolute_path"
+#DEST="ssh://user[:password]@other.host[:port]/[/]some_dir"
+DEST="file:///tmp/sranje"
 
 # INCLUDE LIST OF DIRECTORIES
 # Here is a list of directories to include; if you want to include
@@ -61,14 +72,12 @@ DEST="file:///home/foobar_user_name/new-backup-test/"
 #        )
 #
 # Simpler example with one location:
-INCLIST=( "/home/foobar_user_name/Documents/Prose/" ) 
+INCLIST=( "/etc" ) 
 
 # EXCLUDE LIST OF DIRECTORIES
 # Even though I am being specific about what I want to include,
 # there is still a lot of stuff I don't need.
-EXCLIST=(   "/home/*/Trash" \
-            "/home/*/Projects/Completed" \
-            "/**.DS_Store" "/**Icon?" "/**.AppleDouble" \
+EXCLIST=( 
         )
 
 # STATIC BACKUP OPTIONS
@@ -76,7 +85,7 @@ EXCLIST=(   "/home/*/Trash" \
 # duplicity.  I use both the `--full-if-older-than` option plus the
 # `--s3-use-new-style` option (for European buckets).  Be sure to separate your
 # options with appropriate spacing.
-STATIC_OPTIONS="--full-if-older-than 14D --s3-use-new-style"
+STATIC_OPTIONS="--full-if-older-than 14D"
 
 # FULL BACKUP & REMOVE OLDER THAN SETTINGS
 # Because duplicity will continue to add to each backup as you go,
@@ -98,9 +107,9 @@ CLEAN_UP_VARIABLE="2"
 # I run this script as root, but save the log files under my user name --
 # just makes it easier for me to read them and delete them as needed.
 
-LOGDIR="/home/foobar_user_name/logs/test2/"
+LOGDIR="/tmp/dupl_log/"
 LOG_FILE="duplicity-`date +%Y-%m-%d_%H-%M`.txt"
-LOG_FILE_OWNER="foobar_user_name:foobar_user_name"
+LOG_FILE_OWNER="root:root"
 VERBOSITY="-v3"
 
 # EMAIL ALERT (*thanks: rmarescu*)
@@ -130,6 +139,12 @@ LOGFILE="${LOGDIR}${LOG_FILE}"
 DUPLICITY="$(which duplicity)"
 S3CMD="$(which s3cmd)"
 MAIL="$(which mailx)"
+
+if [ $ENCRYPTION = "yes" ]; then
+  ENCRYPT="--encrypt-key=${GPG_KEY} --sign-key=${GPG_KEY}"
+elif [ $ENCRYPTION = "no" ]; then
+  ENCRYPT="--no-encryption"
+fi
 
 NO_S3CMD="WARNING: s3cmd is not installed, remote file \
 size information unavailable."
@@ -220,8 +235,7 @@ duplicity_cleanup()
 {
   echo "-----------[ Duplicity Cleanup ]-----------" >> ${LOGFILE}
   ${ECHO} ${DUPLICITY} ${CLEAN_UP_TYPE} ${CLEAN_UP_VARIABLE} --force \
-	    --encrypt-key=${GPG_KEY} \
-	    --sign-key=${GPG_KEY} \
+	    $ENCRYPT \
 	    ${DEST} >> ${LOGFILE}
   echo >> ${LOGFILE}
 }
@@ -229,8 +243,7 @@ duplicity_cleanup()
 duplicity_backup()
 {
   ${ECHO} ${DUPLICITY} ${OPTION} ${VERBOSITY} ${STATIC_OPTIONS} \
-  --encrypt-key=${GPG_KEY} \
-  --sign-key=${GPG_KEY} \
+  $ENCRYPT \
   ${EXCLUDE} \
   ${INCLUDE} \
   ${EXCLUDEROOT} \
@@ -396,8 +409,7 @@ elif [ "$1" = "--list-current-files" ]; then
   check_variables
   OPTION="list-current-files"
   ${DUPLICITY} ${OPTION} ${VERBOSITY} ${STATIC_OPTIONS} \
-  --encrypt-key=${GPG_KEY} \
-  --sign-key=${GPG_KEY} \
+  $ENCRYPT \
   ${DEST}
 	echo -e "--------    END    --------\n" >> ${LOGFILE}
 

@@ -413,6 +413,14 @@ elif [ "$1" = "--list-current-files" ]; then
   ${DEST}
 	echo -e "--------    END    --------\n" >> ${LOGFILE}
 
+elif [ "$1" = "--collection-status" ]; then
+  check_variables
+  OPTION="collection-status"
+  ${DUPLICITY} ${OPTION} ${VERBOSITY} ${STATIC_OPTIONS} \
+  $ENCRYPT \
+  ${DEST}
+	echo -e "--------    END    --------\n" >> ${LOGFILE}
+
 elif [ "$1" = "--backup" ]; then
   check_variables
   include_exclude
@@ -433,6 +441,7 @@ else
     --restore [path]: restores the entire backup
     --restore-file [file] [destination/filename]: restore a specific file
     --list-current-files: lists the files currently backed up in the archive
+    --collection-status: show all the backup sets in the archive
 
     --backup-script: automatically backup the script and secret key to the current working directory
 

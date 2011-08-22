@@ -24,25 +24,25 @@
 
 # AMAZON S3 INFORMATION
 # Comment out this lines if you're not using S3
-#export AWS_ACCESS_KEY_ID=" "
-#export AWS_SECRET_ACCESS_KEY=" "
+export AWS_ACCESS_KEY_ID="foobar_aws_key_id"
+export AWS_SECRET_ACCESS_KEY="foobar_aws_access_key"
 
 # If you aren't running this from a cron, comment this line out
 # and duplicity should prompt you for your password.
 # Comment out if you're not using encryption
-#export PASSPHRASE="foobar_gpg_passphrase"
+export PASSPHRASE="foobar_gpg_passphrase"
 
 # Specify which GPG key you would like to use (even if you have only one).
 # Comment out if you're not using encryption
-#GPG_KEY=" "
+GPG_KEY="foobar_gpg_key"
 
 # Do you want your backup to be encrypted? yes/no
-ENCRYPTION='no'
+ENCRYPTION='yes'
 
 # The ROOT of your backup (where you want the backup to start);
 # This can be / or somwhere else -- I use /home/ because all the
 # directories start with /home/ that I want to backup.
-ROOT="/"
+ROOT="/home"
 
 # BACKUP DESTINATION INFORMATION
 # In my case, I use Amazon S3 use this - so I made up a unique
@@ -58,7 +58,7 @@ ROOT="/"
 #DEST="ftp://user[:password]@other.host[:port]/some_dir"
 #DEST="rsync://user@host.com[:port]//absolute_path"
 #DEST="ssh://user[:password]@other.host[:port]/[/]some_dir"
-DEST="file:///tmp/sranje"
+DEST="file:///home/foobar_user_name/new-backup-test/"
 
 # INCLUDE LIST OF DIRECTORIES
 # Here is a list of directories to include; if you want to include
@@ -72,12 +72,14 @@ DEST="file:///tmp/sranje"
 #        )
 #
 # Simpler example with one location:
-INCLIST=( "/etc" ) 
+INCLIST=( "/home/foobar_user_name/Documents/Prose/" ) 
 
 # EXCLUDE LIST OF DIRECTORIES
 # Even though I am being specific about what I want to include,
 # there is still a lot of stuff I don't need.
-EXCLIST=( 
+EXCLIST=(   "/home/*/Trash" \
+            "/home/*/Projects/Completed" \
+            "/**.DS_Store" "/**Icon?" "/**.AppleDouble" \
         )
 
 # STATIC BACKUP OPTIONS
@@ -85,7 +87,7 @@ EXCLIST=(
 # duplicity.  I use both the `--full-if-older-than` option plus the
 # `--s3-use-new-style` option (for European buckets).  Be sure to separate your
 # options with appropriate spacing.
-STATIC_OPTIONS="--full-if-older-than 14D"
+STATIC_OPTIONS="--full-if-older-than 14D --s3-use-new-style"
 
 # FULL BACKUP & REMOVE OLDER THAN SETTINGS
 # Because duplicity will continue to add to each backup as you go,
@@ -107,9 +109,9 @@ CLEAN_UP_VARIABLE="2"
 # I run this script as root, but save the log files under my user name --
 # just makes it easier for me to read them and delete them as needed.
 
-LOGDIR="/tmp/dupl_log/"
+LOGDIR="/home/foobar_user_name/logs/test2/"
 LOG_FILE="duplicity-`date +%Y-%m-%d_%H-%M`.txt"
-LOG_FILE_OWNER="root:root"
+LOG_FILE_OWNER="foobar_user_name:foobar_user_name"
 VERBOSITY="-v3"
 
 # EMAIL ALERT (*thanks: rmarescu*)

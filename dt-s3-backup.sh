@@ -220,9 +220,9 @@ duplicity_cleanup()
 {
   echo "-----------[ Duplicity Cleanup ]-----------" >> ${LOGFILE}
   ${ECHO} ${DUPLICITY} ${CLEAN_UP_TYPE} ${CLEAN_UP_VARIABLE} --force \
-	    --encrypt-key=${GPG_KEY} \
-	    --sign-key=${GPG_KEY} \
-	    ${DEST} >> ${LOGFILE}
+        --encrypt-key=${GPG_KEY} \
+        --sign-key=${GPG_KEY} \
+        ${DEST} >> ${LOGFILE}
   echo >> ${LOGFILE}
 }
 
@@ -338,14 +338,14 @@ elif [ "$1" = "--restore" ]; then
     echo "Please provide a destination path (eg, /home/user/dir):"
     read -e NEWDESTINATION
     DEST=$NEWDESTINATION
-		echo ">> You will restore from ${ROOT} to ${DEST}"
-		echo "Are you sure you want to do that ('yes' to continue)?"
-		read ANSWER
-		if [[ "$ANSWER" != "yes" ]]; then
-			echo "You said << ${ANSWER} >> so I am exiting now."
-			echo -e "User aborted restore process ...\n" >> ${LOGFILE}
-			exit 1
-		fi
+        echo ">> You will restore from ${ROOT} to ${DEST}"
+        echo "Are you sure you want to do that ('yes' to continue)?"
+        read ANSWER
+        if [[ "$ANSWER" != "yes" ]]; then
+            echo "You said << ${ANSWER} >> so I am exiting now."
+            echo -e "User aborted restore process ...\n" >> ${LOGFILE}
+            exit 1
+        fi
   else
     DEST=$2
   fi
@@ -371,10 +371,10 @@ elif [ "$1" = "--restore-file" ]; then
   fi
 
   if [[ "$3" ]]; then
-		DEST=$3
-	else
+        DEST=$3
+    else
     DEST=$(basename $FILE_TO_RESTORE)
-	fi
+    fi
 
   echo -e "YOU ARE ABOUT TO..."
   echo -e ">> RESTORE: $FILE_TO_RESTORE"
@@ -399,7 +399,7 @@ elif [ "$1" = "--list-current-files" ]; then
   --encrypt-key=${GPG_KEY} \
   --sign-key=${GPG_KEY} \
   ${DEST}
-	echo -e "--------    END    --------\n" >> ${LOGFILE}
+    echo -e "--------    END    --------\n" >> ${LOGFILE}
 
 elif [ "$1" = "--backup" ]; then
   check_variables
@@ -436,14 +436,14 @@ fi
 echo -e "--------    END DT-S3-BACKUP SCRIPT    --------\n" >> ${LOGFILE}
 
 if [ $EMAIL_TO ]; then
-	if [ ! -x "$MAIL" ]; then
-		echo -e "Email coulnd't be sent. mailx not available." >> ${LOGFILE}
-	else
-		EMAIL_FROM=${EMAIL_FROM:+"-r ${EMAIL_FROM}"}
-		EMAIL_SUBJECT=${EMAIL_SUBJECT:="DT-S3 Alert ${LOG_FILE}"}
-		${MAIL} -s """${EMAIL_SUBJECT}""" $EMAIL_FROM ${EMAIL_TO} < ${LOGFILE}
-		echo -e "Email alert sent to ${EMAIL_TO} using ${MAIL}" >> ${LOGFILE}
-	fi
+    if [ ! -x "$MAIL" ]; then
+        echo -e "Email coulnd't be sent. mailx not available." >> ${LOGFILE}
+    else
+        EMAIL_FROM=${EMAIL_FROM:+"-r ${EMAIL_FROM}"}
+        EMAIL_SUBJECT=${EMAIL_SUBJECT:="DT-S3 Alert ${LOG_FILE}"}
+        ${MAIL} -s """${EMAIL_SUBJECT}""" $EMAIL_FROM ${EMAIL_TO} < ${LOGFILE}
+        echo -e "Email alert sent to ${EMAIL_TO} using ${MAIL}" >> ${LOGFILE}
+    fi
 fi
 
 if [ ${ECHO} ]; then

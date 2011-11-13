@@ -23,20 +23,26 @@
 # ---------------------------------------------------------------------------- #
 
 # AMAZON S3 INFORMATION
+# Comment out this lines if you're not using S3
 export AWS_ACCESS_KEY_ID="foobar_aws_key_id"
 export AWS_SECRET_ACCESS_KEY="foobar_aws_access_key"
 
 # If you aren't running this from a cron, comment this line out
 # and duplicity should prompt you for your password.
+# Comment out if you're not using encryption
 export PASSPHRASE="foobar_gpg_passphrase"
 
 # Specify which GPG key you would like to use (even if you have only one).
+# Comment out if you're not using encryption
 GPG_KEY="foobar_gpg_key"
+
+# Do you want your backup to be encrypted? yes/no
+ENCRYPTION='yes'
 
 # The ROOT of your backup (where you want the backup to start);
 # This can be / or somwhere else -- I use /home/ because all the
 # directories start with /home/ that I want to backup.
-ROOT="/home/"
+ROOT="/home"
 
 # BACKUP DESTINATION INFORMATION
 # In my case, I use Amazon S3 use this - so I made up a unique
@@ -47,6 +53,11 @@ ROOT="/home/"
 # NOTE: You do need to keep the "s3+http://<your location>/" format
 # even though duplicity supports "s3://<your location>/".
 #DEST="s3+http://backup-bucket/backup-folder/"
+
+# Other possible locations
+#DEST="ftp://user[:password]@other.host[:port]/some_dir"
+#DEST="rsync://user@host.com[:port]//absolute_path"
+#DEST="ssh://user[:password]@other.host[:port]/[/]some_dir"
 DEST="file:///home/foobar_user_name/new-backup-test/"
 
 # INCLUDE LIST OF DIRECTORIES
@@ -130,6 +141,12 @@ LOGFILE="${LOGDIR}${LOG_FILE}"
 DUPLICITY="$(which duplicity)"
 S3CMD="$(which s3cmd)"
 MAIL="$(which mailx)"
+
+if [ $ENCRYPTION = "yes" ]; then
+  ENCRYPT="--encrypt-key=${GPG_KEY} --sign-key=${GPG_KEY}"
+elif [ $ENCRYPTION = "no" ]; then
+  ENCRYPT="--no-encryption"
+fi
 
 NO_S3CMD="WARNING: s3cmd is not installed, remote file \
 size information unavailable."
@@ -220,8 +237,7 @@ duplicity_cleanup()
 {
   echo "-----------[ Duplicity Cleanup ]-----------" >> ${LOGFILE}
   ${ECHO} ${DUPLICITY} ${CLEAN_UP_TYPE} ${CLEAN_UP_VARIABLE} --force \
-	    --encrypt-key=${GPG_KEY} \
-	    --sign-key=${GPG_KEY} \
+	    ${ENCRYPT} \
 	    ${DEST} >> ${LOGFILE}
   echo >> ${LOGFILE}
 }
@@ -229,8 +245,7 @@ duplicity_cleanup()
 duplicity_backup()
 {
   ${ECHO} ${DUPLICITY} ${OPTION} ${VERBOSITY} ${STATIC_OPTIONS} \
-  --encrypt-key=${GPG_KEY} \
-  --sign-key=${GPG_KEY} \
+  ${ENCRYPT} \
   ${EXCLUDE} \
   ${INCLUDE} \
   ${EXCLUDEROOT} \
@@ -396,8 +411,15 @@ elif [ "$1" = "--list-current-files" ]; then
   check_variables
   OPTION="list-current-files"
   ${DUPLICITY} ${OPTION} ${VERBOSITY} ${STATIC_OPTIONS} \
-  --encrypt-key=${GPG_KEY} \
-  --sign-key=${GPG_KEY} \
+  $ENCRYPT \
+  ${DEST}
+	echo -e "--------    END    --------\n" >> ${LOGFILE}
+
+elif [ "$1" = "--collection-status" ]; then
+  check_variables
+  OPTION="collection-status"
+  ${DUPLICITY} ${OPTION} ${VERBOSITY} ${STATIC_OPTIONS} \
+  $ENCRYPT \
   ${DEST}
 	echo -e "--------    END    --------\n" >> ${LOGFILE}
 
@@ -421,6 +443,7 @@ else
     --restore [path]: restores the entire backup
     --restore-file [file] [destination/filename]: restore a specific file
     --list-current-files: lists the files currently backed up in the archive
+    --collection-status: show all the backup sets in the archive
 
     --backup-script: automatically backup the script and secret key to the current working directory
 

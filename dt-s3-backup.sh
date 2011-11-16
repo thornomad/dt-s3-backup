@@ -441,7 +441,7 @@ if [ $EMAIL_TO ]; then
     else
         EMAIL_FROM=${EMAIL_FROM:+"-r ${EMAIL_FROM}"}
         EMAIL_SUBJECT=${EMAIL_SUBJECT:="DT-S3 Alert ${LOG_FILE}"}
-        cat ${LOG_FILE} | ${MAIL} -s """${EMAIL_SUBJECT}""" $EMAIL_FROM ${EMAIL_TO}
+        cat ${LOGFILE} | ${MAIL} -s """${EMAIL_SUBJECT}""" $EMAIL_FROM ${EMAIL_TO}
         echo -e "Email alert sent to ${EMAIL_TO} using ${MAIL}" >> ${LOGFILE}
     fi
 fi

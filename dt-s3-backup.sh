@@ -219,7 +219,7 @@ include_exclude()
 duplicity_cleanup()
 {
   echo "-----------[ Duplicity Cleanup ]-----------" >> ${LOGFILE}
-  ${ECHO} ${DUPLICITY} ${CLEAN_UP_TYPE} ${CLEAN_UP_VARIABLE}} ${STATIC_OPTIONS} --force \
+  ${ECHO} ${DUPLICITY} ${CLEAN_UP_TYPE} ${CLEAN_UP_VARIABLE} ${STATIC_OPTIONS} --force \
         --encrypt-key=${GPG_KEY} \
         --sign-key=${GPG_KEY} \
         ${DEST} >> ${LOGFILE}

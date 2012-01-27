@@ -219,7 +219,7 @@ include_exclude()
 duplicity_cleanup()
 {
   echo "-----------[ Duplicity Cleanup ]-----------" >> ${LOGFILE}
-  ${ECHO} ${DUPLICITY} ${CLEAN_UP_TYPE} ${CLEAN_UP_VARIABLE} --force \
+  ${ECHO} ${DUPLICITY} ${CLEAN_UP_TYPE} ${CLEAN_UP_VARIABLE} ${STATIC_OPTIONS} --force \
         --encrypt-key=${GPG_KEY} \
         --sign-key=${GPG_KEY} \
         ${DEST} >> ${LOGFILE}
@@ -441,7 +441,7 @@ if [ $EMAIL_TO ]; then
     else
         EMAIL_FROM=${EMAIL_FROM:+"-r ${EMAIL_FROM}"}
         EMAIL_SUBJECT=${EMAIL_SUBJECT:="DT-S3 Alert ${LOG_FILE}"}
-        ${MAIL} -s """${EMAIL_SUBJECT}""" $EMAIL_FROM ${EMAIL_TO} < ${LOGFILE}
+        cat ${LOGFILE} | ${MAIL} -s """${EMAIL_SUBJECT}""" $EMAIL_FROM ${EMAIL_TO}
         echo -e "Email alert sent to ${EMAIL_TO} using ${MAIL}" >> ${LOGFILE}
     fi
 fi

@@ -115,6 +115,10 @@ EMAIL_TO=
 EMAIL_FROM=
 EMAIL_SUBJECT=
 
+# command to use to send mail
+MAIL="mailx"
+#MAIL="ssmtp"
+
 # TROUBLESHOOTING: If you are having any problems running this script it is
 # helpful to see the command output that is being generated to determine if the
 # script is causing a problem or if it is an issue with duplicity (or your
@@ -129,7 +133,6 @@ EMAIL_SUBJECT=
 LOGFILE="${LOGDIR}${LOG_FILE}"
 DUPLICITY="$(which duplicity)"
 S3CMD="$(which s3cmd)"
-MAIL="$(which mailx)"
 
 NO_S3CMD="WARNING: s3cmd is not installed, remote file \
 size information unavailable."
@@ -436,12 +439,18 @@ fi
 echo -e "--------    END DT-S3-BACKUP SCRIPT    --------\n" >> ${LOGFILE}
 
 if [ $EMAIL_TO ]; then
-    if [ ! -x "$MAIL" ]; then
-        echo -e "Email couldn't be sent. mailx not available." >> ${LOGFILE}
+    MAILCMD=$(which $MAIL)
+    if [ ! -x "$MAILCMD" ]; then
+        echo -e "Email couldn't be sent. ${MAIL} not available." >> ${LOGFILE}
     else
-        EMAIL_FROM=${EMAIL_FROM:+"-r ${EMAIL_FROM}"}
         EMAIL_SUBJECT=${EMAIL_SUBJECT:="DT-S3 Alert ${LOG_FILE}"}
-        cat ${LOGFILE} | ${MAIL} -s """${EMAIL_SUBJECT}""" $EMAIL_FROM ${EMAIL_TO}
+        if [ "$MAIL" = "ssmtp" ]; then
+          echo """Subject: ${EMAIL_SUBJECT}""" | cat - ${LOGFILE} | ${MAILCMD} -s ${EMAIL_TO}
+
+        elif ["$MAIL" = "mailx" ]; then
+          EMAIL_FROM=${EMAIL_FROM:+"-r ${EMAIL_FROM}"}
+          cat ${LOGFILE} | ${MAILCMD} -s """${EMAIL_SUBJECT}""" $EMAIL_FROM ${EMAIL_TO}
+        fi
         echo -e "Email alert sent to ${EMAIL_TO} using ${MAIL}" >> ${LOGFILE}
     fi
 fi

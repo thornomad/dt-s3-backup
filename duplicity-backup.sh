@@ -125,7 +125,7 @@ VERBOSITY="-v3"
 # address is provided, no alert will be sent.
 # You can set a custom from email address and a custom subject (both optionally)
 # If no value is provided for the subject, the following value will be
-# used by default: "DT-S3 Alert ${LOG_FILE}"
+# used by default: "duplicity-backup Alert ${LOG_FILE}"
 # MTA used: mailx
 #EMAIL="admin@example.com"
 EMAIL_TO=
@@ -187,7 +187,7 @@ size information unavailable."
 NO_S3CMD_CFG="WARNING: s3cmd is not configured, run 's3cmd --configure' \
 in order to retrieve remote file size information. Remote file \
 size information unavailable."
-README_TXT="In case you've long forgotten, this is a backup script that you used to backup some files (most likely remotely at Amazon S3).  In order to restore these files, you first need to import your GPG private key (if you haven't already).  The key is in this directory and the following command should do the trick:\n\ngpg --allow-secret-key-import --import dt-s3-backup-secret.key.txt\n\nAfter your key as been succesfully imported, you should be able to restore your files.\n\nGood luck!"
+README_TXT="In case you've long forgotten, this is a backup script that you used to backup some files (most likely remotely at Amazon S3).  In order to restore these files, you first need to import your GPG private key (if you haven't already).  The key is in this directory and the following command should do the trick:\n\ngpg --allow-secret-key-import --import duplicity-backup-secret.key.txt\n\nAfter your key as been succesfully imported, you should be able to restore your files.\n\nGood luck!"
 CONFIG_VAR_MSG="Oops!! ${0} was unable to run!\nWe are missing one or more important variables at the top of the script.\nCheck your configuration because it appears that something has not been set yet."
 
 if [ ! -x "$DUPLICITY" ]; then
@@ -331,7 +331,7 @@ backup_this_script()
   else
     SCRIPTPATH=$(which ${0})
   fi
-  TMPDIR=dt-s3-backup-`date +%Y-%m-%d`
+  TMPDIR=duplicity-backup-`date +%Y-%m-%d`
   TMPFILENAME=${TMPDIR}.tar.gpg
   README=${TMPDIR}/README
 
@@ -349,7 +349,7 @@ backup_this_script()
 
   mkdir -p ${TMPDIR}
   cp $SCRIPTPATH ${TMPDIR}/
-  gpg -a --export-secret-keys ${GPG_KEY} > ${TMPDIR}/dt-s3-backup-secret.key.txt
+  gpg -a --export-secret-keys ${GPG_KEY} > ${TMPDIR}/duplicity-backup-secret.key.txt
   echo -e ${README_TXT} > ${README}
   echo "Encrypting tarball, choose a password you'll remember..."
   tar c ${TMPDIR} | gpg -aco ${TMPFILENAME}
@@ -373,7 +373,7 @@ check_variables ()
   fi
 }
 
-echo -e "--------    START dt-s3-backup SCRIPT    --------\n" >> ${LOGFILE}
+echo -e "--------    START duplicity-backup SCRIPT    --------\n" >> ${LOGFILE}
 
 case "$1" in
   "--backup-script")
@@ -528,14 +528,14 @@ case "$1" in
   ;;
 esac
 
-echo -e "--------    END dt-s3-backup SCRIPT    --------\n" >> ${LOGFILE}
+echo -e "--------    END duplicity-backup SCRIPT    --------\n" >> ${LOGFILE}
 
 if [ $EMAIL_TO ]; then
   if [ ! -x "$MAIL" ]; then
     echo -e "Email couldn't be sent. mailx not available." >> ${LOGFILE}
   else
     EMAIL_FROM=${EMAIL_FROM:+"-r ${EMAIL_FROM}"}
-    EMAIL_SUBJECT=${EMAIL_SUBJECT:="DT-S3 Alert ${LOG_FILE}"}
+    EMAIL_SUBJECT=${EMAIL_SUBJECT:="duplicity-backup Alert ${LOG_FILE}"}
     cat ${LOGFILE} | ${MAIL} -s """${EMAIL_SUBJECT}""" $EMAIL_FROM ${EMAIL_TO}
     echo -e "Email alert sent to ${EMAIL_TO} using ${MAIL}" >> ${LOGFILE}
   fi

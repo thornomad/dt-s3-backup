@@ -1,47 +1,62 @@
+0.6 Version Six (4 May 2012)
+============================
+This is a rework of the script to include some github patches that were brought to the original script in order to make the script more generic than only Amazon S3 oriented and fix a few issues.
+
+  * Added ability not to encrypt the backup [orkaa]
+  * Added ability to use backup destination locations other than Amazon S3 [orkaa]
+  * Added support for collection-status function [orkaa]
+  * Added ability to specify variables in a config file [poppen]
+  * Fixed broken european S3 buckets [thornomad]
+  * Fixed sed issue [poppen]
+  * Fixed incorrect handling of spaces un paths and filenames [hexwizard]
+  * Renamed script to 'duplicity-backup'
+  * Modified README file to reflect the renaming of the script
+  * Cleaned up tabs in source file
+
 0.5 Version Five (05/09/11)
 ===========================
 
-    * added ability to email log using `mailx`
-    * added `%H` (hour) to default logfile name
+  * added ability to email log using `mailx`
+  * added `%H` (hour) to default logfile name
 
 0.4 Version Four (03/13/10)
 ===========================
 
-	* Moved the source code to github
-	* Add --list-files to view in the standart-output files stored in my archive [marionline]
-	* Added ECHO command to troublshoot the code when needed
-	* Added command line --restore to path & removed RESTORE variable [marionline]
-	* Added --restore-file option [marionline]
-	* Changed --backup-this-script to --backup-scrip
-	* Added README to --backup-script
-	* Force use of --backup option (no accidently running the script)
-	* Added help text to the command line script itself [marionline]
-	* Script without options shows --help and current directory settings
-	* Script checks to make sure you have put some variables in before it runs [marionline]
-	* A number of other minor changes
+  * Moved the source code to github
+  * Add --list-files to view in the standart-output files stored in my archive [marionline]
+  * Added ECHO command to troublshoot the code when needed
+  * Added command line --restore to path & removed RESTORE variable [marionline]
+  * Added --restore-file option [marionline]
+  * Changed --backup-this-script to --backup-script
+  * Added README to --backup-script
+  * Force use of --backup option (no accidently running the script)
+  * Added help text to the command line script itself [marionline]
+  * Script without options shows --help and current directory settings
+  * Script checks to make sure you have put some variables in before it runs [marionline]
+  * A number of other minor changes
 
 Version Three (01/31/09)
 ========================
 
-	* Added comment to explain why folks need to use 's3+' and not 's3:' for Amazon buckets
-	* Used "unset" to remove the variables at end of the script
-	* Fixed a problem when the backup folder on S3 was nested inside another bucket
-	* Changed the PASSPHRASE field to default to the actual passphrase, so one can easily backup the entire script and not have to worry about the passphrase.
-	* Added --backup-this-script option which will turn the script and the secret key into an encrypted tarball that can be kept somewhere safe for easy restores if the machine goes down.
-	* Cleaned up the get_file_size function so it wouldn't run when it wasn't supposed to.
+  * Added comment to explain why folks need to use 's3+' and not 's3:' for Amazon buckets
+  * Used "unset" to remove the variables at end of the script
+  * Fixed a problem when the backup folder on S3 was nested inside another bucket
+  * Changed the PASSPHRASE field to default to the actual passphrase, so one can easily backup the entire script and not have to worry about the passphrase.
+  * Added --backup-this-script option which will turn the script and the secret key into an encrypted tarball that can be kept somewhere safe for easy restores if the machine goes down.
+  * Cleaned up the get_file_size function so it wouldn't run when it wasn't supposed to.
 
 Version Two (12/03/08)
 ======================
 
-	* added GPL license
-	* changed the cleanup feature to automatically force a full backup after (n) number of days as well as automatically cleanup after (n) number of days
-	* added option to force cleanup after (n) number of full backups (rather than by days)
-	* option to changed log file ownership
-	* runtime checks for installed required software and write permissions on log directory
-	* fixed formatting of logfile to be a little more consistent
-	* setup everything in clever functions
+  * added GPL license
+  * changed the cleanup feature to automatically force a full backup after (n) number of days as well as automatically cleanup after (n) number of days
+  * added option to force cleanup after (n) number of full backups (rather than by days)
+  * option to changed log file ownership
+  * runtime checks for installed required software and write permissions on log directory
+  * fixed formatting of logfile to be a little more consistent
+  * setup everything in clever functions
 
 Version One (11/24/08)
 ======================
 
-* Initial release.
+  * Initial release.

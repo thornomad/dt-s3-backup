@@ -2,6 +2,7 @@
 #
 # Copyright (c) 2008-2010 Damon Timm.
 # Copyright (c) 2010 Mario Santagiuliana.
+# Copyright (c) 2012 Marc Gallet.
 #
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -18,19 +19,24 @@
 #
 # MORE ABOUT THIS SCRIPT AVAILABLE IN THE README AND AT:
 #
-# http://damontimm.com/code/dt-s3-backup
+# http://zertrin.org/duplicity-backup.html (for this version)
+# http://damontimm.com/code/dt-s3-backup (for the original programi by Damon Timm)
+#
+# Latest code available at:
+# http://github.com/zertrin/duplicity-backup
 #
 # ---------------------------------------------------------------------------- #
 
 # AMAZON S3 INFORMATION
 # Comment out this lines if you're not using S3
-export AWS_ACCESS_KEY_ID="foobar_aws_key_id"
-export AWS_SECRET_ACCESS_KEY="foobar_aws_access_key"
+AWS_ACCESS_KEY_ID="foobar_aws_key_id"
+AWS_SECRET_ACCESS_KEY="foobar_aws_access_key"
 
+# ENCRYPTION INFORMATION
 # If you aren't running this from a cron, comment this line out
 # and duplicity should prompt you for your password.
 # Comment out if you're not using encryption
-export PASSPHRASE="foobar_gpg_passphrase"
+PASSPHRASE="foobar_gpg_passphrase"
 
 # Specify which GPG key you would like to use (even if you have only one).
 # Comment out if you're not using encryption
@@ -39,6 +45,7 @@ GPG_KEY="foobar_gpg_key"
 # Do you want your backup to be encrypted? yes/no
 ENCRYPTION='yes'
 
+# BACKUP SOURCE INFORMATION
 # The ROOT of your backup (where you want the backup to start);
 # This can be / or somwhere else -- I use /home/ because all the
 # directories start with /home/ that I want to backup.
@@ -52,13 +59,12 @@ ROOT="/home"
 #
 # NOTE: You do need to keep the "s3+http://<your location>/" format
 # even though duplicity supports "s3://<your location>/".
-#DEST="s3+http://backup-bucket/backup-folder/"
-
+DEST="s3+http://backup-bucket/backup-folder/"
 # Other possible locations
 #DEST="ftp://user[:password]@other.host[:port]/some_dir"
 #DEST="rsync://user@host.com[:port]//absolute_path"
 #DEST="ssh://user[:password]@other.host[:port]/[/]some_dir"
-DEST="file:///home/foobar_user_name/new-backup-test/"
+#DEST="file:///home/foobar_user_name/new-backup-test/"
 
 # INCLUDE LIST OF DIRECTORIES
 # Here is a list of directories to include; if you want to include
@@ -137,6 +143,34 @@ EMAIL_SUBJECT=
 ##############################################################
 # Script Happens Below This Line - Shouldn't Require Editing #
 ##############################################################
+
+# Read config file
+CONFIG=
+while :
+do
+    case $1 in
+        -c | --config)
+            CONFIG=$2
+            shift 2
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
+
+if [ ! -z "$CONFIG" -a -f "$CONFIG" ];
+then
+  . $CONFIG
+elif [ ! -z "$CONFIG" -a ! -f "$CONFIG" ];
+then
+  echo "ERROR: can't find config file!" >&2
+fi
+
+export AWS_ACCESS_KEY_ID
+export AWS_SECRET_ACCESS_KEY
+export PASSPHRASE
+
 LOGFILE="${LOGDIR}${LOG_FILE}"
 DUPLICITY="$(which duplicity)"
 S3CMD="$(which s3cmd)"
@@ -153,7 +187,7 @@ size information unavailable."
 NO_S3CMD_CFG="WARNING: s3cmd is not configured, run 's3cmd --configure' \
 in order to retrieve remote file size information. Remote file \
 size information unavailable."
-README_TXT="In case you've long forgotten, this is a backup script that you used to backup some files (most likely remotely at Amazon S3).  In order to restore these files, you first need to import your GPG private key (if you haven't already).  The key is in this directory and the following command should do the trick:\n\ngpg --allow-secret-key-import --import s3-secret.key.txt\n\nAfter your key as been succesfully imported, you should be able to restore your files.\n\nGood luck!"
+README_TXT="In case you've long forgotten, this is a backup script that you used to backup some files (most likely remotely at Amazon S3).  In order to restore these files, you first need to import your GPG private key (if you haven't already).  The key is in this directory and the following command should do the trick:\n\ngpg --allow-secret-key-import --import dt-s3-backup-secret.key.txt\n\nAfter your key as been succesfully imported, you should be able to restore your files.\n\nGood luck!"
 CONFIG_VAR_MSG="Oops!! ${0} was unable to run!\nWe are missing one or more important variables at the top of the script.\nCheck your configuration because it appears that something has not been set yet."
 
 if [ ! -x "$DUPLICITY" ]; then
@@ -188,41 +222,65 @@ get_source_file_size()
 {
   echo "---------[ Source File Size Information ]---------" >> ${LOGFILE}
 
+  # Patches to support spaces in paths-
+  # Remove space as a field separator temporarily
+  OLDIFS=$IFS
+  IFS=$(echo -en "\t\n")
+
   for exclude in ${EXCLIST[@]}; do
     DUEXCLIST="${DUEXCLIST}${exclude}\n"
   done
 
   for include in ${INCLIST[@]}
     do
-      echo -e $DUEXCLIST | \
+      echo -e '"'$DUEXCLIST'"' | \
       du -hs --exclude-from="-" ${include} | \
-      awk '{ print $2"\t"$1 }' \
+      awk '{ FS="\t"; $0=$0; print $1"\t"$2 }' \
       >> ${LOGFILE}
   done
   echo >> ${LOGFILE}
+
+  # Restore IFS
+  IFS=$OLDIFS
 }
 
 get_remote_file_size()
 {
   echo "------[ Destination File Size Information ]------" >> ${LOGFILE}
-  if [ `echo ${DEST} | cut -c 1,2` = "fi" ]; then
-    TMPDEST=`echo ${DEST} | cut -c 6-`
-    SIZE=`du -hs ${TMPDEST} | awk '{print $1}'`
-  elif [ `echo ${DEST} | cut -c 1,2` = "s3" ] &&  $S3CMD_AVAIL ; then
-      TMPDEST=$(echo ${DEST} | cut -c 11-)
-      SIZE=`s3cmd du -H s3://${TMPDEST} | awk '{print $1}'`
-  else
-      SIZE="s3cmd not installed."
-  fi
+
+  dest_type=`echo ${DEST} | cut -c 1,2`
+  case $dest_type in
+    "fi")
+      TMPDEST=`echo ${DEST} | cut -c 6-`
+      SIZE=`du -hs ${TMPDEST} | awk '{print $1}'`
+    ;;
+    "s3")
+      if $S3CMD_AVAIL ; then
+          TMPDEST=$(echo ${DEST} | cut -c 11-)
+          SIZE=`s3cmd du -H s3://${TMPDEST} | awk '{print $1}'`
+      else
+          SIZE="s3cmd not installed."
+      fi
+    ;;
+    *)
+      SIZE="Information on remote file size unavailable."
+    ;;
+  esac
+
   echo "Current Remote Backup File Size: ${SIZE}" >> ${LOGFILE}
   echo >> ${LOGFILE}
 }
 
 include_exclude()
 {
+  # Changes to handle spaces in directory names and filenames
+  # and wrapping the files to include and exclude in quotes.
+  OLDIFS=$IFS
+  IFS=$(echo -en "\t\n")
+
   for include in ${INCLIST[@]}
     do
-      TMP=" --include="$include
+      TMP=" --include=""'"$include"'"
       INCLUDE=$INCLUDE$TMP
   done
   for exclude in ${EXCLIST[@]}
@@ -231,20 +289,23 @@ include_exclude()
       EXCLUDE=$EXCLUDE$TMP
     done
     EXCLUDEROOT="--exclude=**"
+
+  # Restore IFS
+  IFS=$OLDIFS
 }
 
 duplicity_cleanup()
 {
   echo "-----------[ Duplicity Cleanup ]-----------" >> ${LOGFILE}
-  ${ECHO} ${DUPLICITY} ${CLEAN_UP_TYPE} ${CLEAN_UP_VARIABLE} --force \
-	    ${ENCRYPT} \
-	    ${DEST} >> ${LOGFILE}
+  eval ${ECHO} ${DUPLICITY} ${CLEAN_UP_TYPE} ${CLEAN_UP_VARIABLE} ${STATIC_OPTIONS} --force \
+      ${ENCRYPT} \
+      ${DEST} >> ${LOGFILE}
   echo >> ${LOGFILE}
 }
 
 duplicity_backup()
 {
-  ${ECHO} ${DUPLICITY} ${OPTION} ${VERBOSITY} ${STATIC_OPTIONS} \
+  eval ${ECHO} ${DUPLICITY} ${OPTION} ${VERBOSITY} ${STATIC_OPTIONS} \
   ${ENCRYPT} \
   ${EXCLUDE} \
   ${INCLUDE} \
@@ -258,7 +319,7 @@ get_file_sizes()
   get_source_file_size
   get_remote_file_size
 
-  sed -i '/-------------------------------------------------/d' ${LOGFILE}
+  sed -i -e '/^--*$/d' ${LOGFILE}
   chown ${LOG_FILE_OWNER} ${LOGFILE}
 }
 
@@ -288,7 +349,7 @@ backup_this_script()
 
   mkdir -p ${TMPDIR}
   cp $SCRIPTPATH ${TMPDIR}/
-  gpg -a --export-secret-keys ${GPG_KEY} > ${TMPDIR}/s3-secret.key.txt
+  gpg -a --export-secret-keys ${GPG_KEY} > ${TMPDIR}/dt-s3-backup-secret.key.txt
   echo -e ${README_TXT} > ${README}
   echo "Encrypting tarball, choose a password you'll remember..."
   tar c ${TMPDIR} | gpg -aco ${TMPFILENAME}
@@ -312,161 +373,172 @@ check_variables ()
   fi
 }
 
-echo -e "--------    START DT-S3-BACKUP SCRIPT    --------\n" >> ${LOGFILE}
+echo -e "--------    START dt-s3-backup SCRIPT    --------\n" >> ${LOGFILE}
 
-if [ "$1" = "--backup-script" ]; then
-  backup_this_script
-  exit
-elif [ "$1" = "--full" ]; then
-  check_variables
-  OPTION="full"
-  include_exclude
-  duplicity_backup
-  duplicity_cleanup
-  get_file_sizes
+case "$1" in
+  "--backup-script")
+    backup_this_script
+    exit
+  ;;
 
-elif [ "$1" = "--verify" ]; then
-  check_variables
-  OLDROOT=${ROOT}
-  ROOT=${DEST}
-  DEST=${OLDROOT}
-  OPTION="verify"
+  "--full")
+    check_variables
+    OPTION="full"
+    include_exclude
+    duplicity_backup
+    duplicity_cleanup
+    get_file_sizes
+  ;;
 
-  echo -e "-------[ Verifying Source & Destination ]-------\n" >> ${LOGFILE}
-  include_exclude
-  duplicity_backup
+  "--verify")
+    check_variables
+    OLDROOT=${ROOT}
+    ROOT=${DEST}
+    DEST=${OLDROOT}
+    OPTION="verify"
 
-  OLDROOT=${ROOT}
-  ROOT=${DEST}
-  DEST=${OLDROOT}
+    echo -e "-------[ Verifying Source & Destination ]-------\n" >> ${LOGFILE}
+    include_exclude
+    duplicity_backup
 
-  get_file_sizes
+    OLDROOT=${ROOT}
+    ROOT=${DEST}
+    DEST=${OLDROOT}
 
-  echo -e "Verify complete.  Check the log file for results:\n>> ${LOGFILE}"
+    get_file_sizes
 
-elif [ "$1" = "--restore" ]; then
-  check_variables
-  ROOT=$DEST
-  OPTION="restore"
+    echo -e "Verify complete.  Check the log file for results:\n>> ${LOGFILE}"
+  ;;
 
-  if [[ ! "$2" ]]; then
-    echo "Please provide a destination path (eg, /home/user/dir):"
-    read -e NEWDESTINATION
-    DEST=$NEWDESTINATION
-		echo ">> You will restore from ${ROOT} to ${DEST}"
-		echo "Are you sure you want to do that ('yes' to continue)?"
-		read ANSWER
-		if [[ "$ANSWER" != "yes" ]]; then
-			echo "You said << ${ANSWER} >> so I am exiting now."
-			echo -e "User aborted restore process ...\n" >> ${LOGFILE}
-			exit 1
-		fi
-  else
-    DEST=$2
-  fi
+  "--restore")
+    check_variables
+    ROOT=$DEST
+    OPTION="restore"
 
-  echo "Attempting to restore now ..."
-  duplicity_backup
+    if [[ ! "$2" ]]; then
+      echo "Please provide a destination path (eg, /home/user/dir):"
+      read -e NEWDESTINATION
+      DEST=$NEWDESTINATION
+      echo ">> You will restore from ${ROOT} to ${DEST}"
+      echo "Are you sure you want to do that ('yes' to continue)?"
+      read ANSWER
+      if [[ "$ANSWER" != "yes" ]]; then
+        echo "You said << ${ANSWER} >> so I am exiting now."
+        echo -e "User aborted restore process ...\n" >> ${LOGFILE}
+        exit 1
+      fi
+    else
+      DEST=$2
+    fi
 
-elif [ "$1" = "--restore-file" ]; then
-  check_variables
-  ROOT=$DEST
-  INCLUDE=
-  EXCLUDE=
-  EXLUDEROOT=
-  OPTION=
+    echo "Attempting to restore now ..."
+    duplicity_backup
+  ;;
 
-  if [[ ! "$2" ]]; then
-    echo "Which file do you want to restore (eg, mail/letter.txt):"
-    read -e FILE_TO_RESTORE
-    FILE_TO_RESTORE=$FILE_TO_RESTORE
-    echo
-  else
-    FILE_TO_RESTORE=$2
-  fi
+  "--restore-file")
+    check_variables
+    ROOT=$DEST
+    INCLUDE=
+    EXCLUDE=
+    EXLUDEROOT=
+    OPTION=
 
-  if [[ "$3" ]]; then
-		DEST=$3
-	else
-    DEST=$(basename $FILE_TO_RESTORE)
-	fi
+    if [[ ! "$2" ]]; then
+      echo "Which file do you want to restore (eg, mail/letter.txt):"
+      read -e FILE_TO_RESTORE
+      FILE_TO_RESTORE="'"$FILE_TO_RESTORE"'"
+      echo
+    else
+      FILE_TO_RESTORE="'"$2"'"
+    fi
 
-  echo -e "YOU ARE ABOUT TO..."
-  echo -e ">> RESTORE: $FILE_TO_RESTORE"
-  echo -e ">> TO: ${DEST}"
-  echo -e "\nAre you sure you want to do that ('yes' to continue)?"
-  read ANSWER
-  if [ "$ANSWER" != "yes" ]; then
-    echo "You said << ${ANSWER} >> so I am exiting now."
+    if [[ "$3" ]]; then
+      DEST="'"$3"'"
+    else
+      DEST=$(basename $FILE_TO_RESTORE)
+    fi
+
+    echo -e "YOU ARE ABOUT TO..."
+    echo -e ">> RESTORE: $FILE_TO_RESTORE"
+    echo -e ">> TO: ${DEST}"
+    echo -e "\nAre you sure you want to do that ('yes' to continue)?"
+    read ANSWER
+    if [ "$ANSWER" != "yes" ]; then
+      echo "You said << ${ANSWER} >> so I am exiting now."
+      echo -e "--------    END    --------\n" >> ${LOGFILE}
+      exit 1
+    fi
+
+    echo "Restoring now ..."
+    #use INCLUDE variable without create another one
+    INCLUDE="--file-to-restore ${FILE_TO_RESTORE}"
+    duplicity_backup
+  ;;
+
+  "--list-current-files")
+    check_variables
+    OPTION="list-current-files"
+    ${DUPLICITY} ${OPTION} ${VERBOSITY} ${STATIC_OPTIONS} \
+    $ENCRYPT \
+    ${DEST}
     echo -e "--------    END    --------\n" >> ${LOGFILE}
-    exit 1
-  fi
+  ;;
 
-  echo "Restoring now ..."
-  #use INCLUDE variable without create another one
-  INCLUDE="--file-to-restore ${FILE_TO_RESTORE}"
-  duplicity_backup
+  "--collection-status")
+    check_variables
+    OPTION="collection-status"
+    ${DUPLICITY} ${OPTION} ${VERBOSITY} ${STATIC_OPTIONS} \
+    $ENCRYPT \
+    ${DEST}
+    echo -e "--------    END    --------\n" >> ${LOGFILE}
+  ;;
 
-elif [ "$1" = "--list-current-files" ]; then
-  check_variables
-  OPTION="list-current-files"
-  ${DUPLICITY} ${OPTION} ${VERBOSITY} ${STATIC_OPTIONS} \
-  $ENCRYPT \
-  ${DEST}
-	echo -e "--------    END    --------\n" >> ${LOGFILE}
+  "--backup")
+    check_variables
+    include_exclude
+    duplicity_backup
+    duplicity_cleanup
+    get_file_sizes
+  ;;
 
-elif [ "$1" = "--collection-status" ]; then
-  check_variables
-  OPTION="collection-status"
-  ${DUPLICITY} ${OPTION} ${VERBOSITY} ${STATIC_OPTIONS} \
-  $ENCRYPT \
-  ${DEST}
-	echo -e "--------    END    --------\n" >> ${LOGFILE}
+  *)
+    echo -e "[Only show `basename $0` usage options]\n" >> ${LOGFILE}
+    echo "  USAGE:
+      `basename $0` [-c configfile] [options]
 
-elif [ "$1" = "--backup" ]; then
-  check_variables
-  include_exclude
-  duplicity_backup
-  duplicity_cleanup
-  get_file_sizes
+    Options:
+      --backup: runs an incremental backup
+      --full: forces a full backup
 
-else
-  echo -e "[Only show `basename $0` usage options]\n" >> ${LOGFILE}
-  echo "  USAGE:
-    `basename $0` [options]
+      --verify: verifies the backup
+      --restore [path]: restores the entire backup
+      --restore-file [file] [destination/filename]: restore a specific file
+      --list-current-files: lists the files currently backed up in the archive
+      --collection-status: show all the backup sets in the archive
 
-  Options:
-    --backup: runs an incremental backup
-    --full: forces a full backup
+      --backup-script: automatically backup the script and secret key to the current working directory
 
-    --verify: verifies the backup
-    --restore [path]: restores the entire backup
-    --restore-file [file] [destination/filename]: restore a specific file
-    --list-current-files: lists the files currently backed up in the archive
-    --collection-status: show all the backup sets in the archive
+    CURRENT SCRIPT VARIABLES:
+    ========================
+      DEST (backup destination) = ${DEST}
+      INCLIST (directories included) = ${INCLIST[@]:0}
+      EXCLIST (directories excluded) = ${EXCLIST[@]:0}
+      ROOT (root directory of backup) = ${ROOT}
+    "
+  ;;
+esac
 
-    --backup-script: automatically backup the script and secret key to the current working directory
-
-  CURRENT SCRIPT VARIABLES:
-  ========================
-    DEST (backup destination) = ${DEST}
-    INCLIST (directories included) = ${INCLIST[@]:0}
-    EXCLIST (directories excluded) = ${EXCLIST[@]:0}
-    ROOT (root directory of backup) = ${ROOT}
-  "
-fi
-
-echo -e "--------    END DT-S3-BACKUP SCRIPT    --------\n" >> ${LOGFILE}
+echo -e "--------    END dt-s3-backup SCRIPT    --------\n" >> ${LOGFILE}
 
 if [ $EMAIL_TO ]; then
-	if [ ! -x "$MAIL" ]; then
-		echo -e "Email coulnd't be sent. mailx not available." >> ${LOGFILE}
-	else
-		EMAIL_FROM=${EMAIL_FROM:+"-r ${EMAIL_FROM}"}
-		EMAIL_SUBJECT=${EMAIL_SUBJECT:="DT-S3 Alert ${LOG_FILE}"}
-		${MAIL} -s """${EMAIL_SUBJECT}""" $EMAIL_FROM ${EMAIL_TO} < ${LOGFILE}
-		echo -e "Email alert sent to ${EMAIL_TO} using ${MAIL}" >> ${LOGFILE}
-	fi
+  if [ ! -x "$MAIL" ]; then
+    echo -e "Email couldn't be sent. mailx not available." >> ${LOGFILE}
+  else
+    EMAIL_FROM=${EMAIL_FROM:+"-r ${EMAIL_FROM}"}
+    EMAIL_SUBJECT=${EMAIL_SUBJECT:="DT-S3 Alert ${LOG_FILE}"}
+    cat ${LOGFILE} | ${MAIL} -s """${EMAIL_SUBJECT}""" $EMAIL_FROM ${EMAIL_TO}
+    echo -e "Email alert sent to ${EMAIL_TO} using ${MAIL}" >> ${LOGFILE}
+  fi
 fi
 
 if [ ${ECHO} ]; then

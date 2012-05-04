@@ -14,8 +14,8 @@ machine ever does go belly up.
 Optionally, you can set up an email address where the log file will be sent,
 which is useful when the script is used via cron.
 
-This version is a rewriting of the original code by Marc Gallet, including many
-of the patches that have been brought to the original scripts by various forks
+This version is a rewriting of the code originally written by Damon Timm, including many
+patches that have been brought to the original scripts by various forks
 on Github.
 
 Latest version of the code available at:
@@ -26,7 +26,7 @@ Merge requests are welcome :)
 More information about this script available at:
 http://zertrin.org/duplicity-backup.html
 
-The original version of the code availabe at:
+The original version of the code is availabe at:
 http://github.com/theterran/dt-s3-backup
 
 BEFORE YOU START

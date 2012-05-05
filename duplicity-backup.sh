@@ -27,6 +27,10 @@
 #
 # ---------------------------------------------------------------------------- #
 
+# Set config file (uncomment if you want to use a separate config file)
+# Its content override config below !
+#CONFIG="/some/path/to/config/file"
+
 # AMAZON S3 INFORMATION
 # Comment out this lines if you're not using S3
 AWS_ACCESS_KEY_ID="foobar_aws_key_id"
@@ -132,6 +136,10 @@ EMAIL_TO=
 EMAIL_FROM=
 EMAIL_SUBJECT=
 
+# command to use to send mail (uncomment to activate functionnality)
+#MAIL="mailx"
+#MAIL="ssmtp"
+
 # TROUBLESHOOTING: If you are having any problems running this script it is
 # helpful to see the command output that is being generated to determine if the
 # script is causing a problem or if it is an issue with duplicity (or your
@@ -144,21 +152,7 @@ EMAIL_SUBJECT=
 # Script Happens Below This Line - Shouldn't Require Editing #
 ##############################################################
 
-# Read config file
-CONFIG=
-while :
-do
-    case $1 in
-        -c | --config)
-            CONFIG=$2
-            shift 2
-            ;;
-        *)
-            break
-            ;;
-    esac
-done
-
+# Read config file if specified
 if [ ! -z "$CONFIG" -a -f "$CONFIG" ];
 then
   . $CONFIG
@@ -174,7 +168,10 @@ export PASSPHRASE
 LOGFILE="${LOGDIR}${LOG_FILE}"
 DUPLICITY="$(which duplicity)"
 S3CMD="$(which s3cmd)"
-MAIL="$(which mailx)"
+
+# File to use as a lock. The lock is used to insure that only one instance of
+# the script is running at a time.
+LOCKFILE=${LOGDIR}backup.lock
 
 if [ $ENCRYPTION = "yes" ]; then
   ENCRYPT="--encrypt-key=${GPG_KEY} --sign-key=${GPG_KEY}"
@@ -193,7 +190,10 @@ CONFIG_VAR_MSG="Oops!! ${0} was unable to run!\nWe are missing one or more impor
 if [ ! -x "$DUPLICITY" ]; then
   echo "ERROR: duplicity not installed, that's gotta happen first!" >&2
   exit 1
-elif  [ `echo ${DEST} | cut -c 1,2` = "s3" ]; then
+fi
+
+if  [ `echo ${DEST} | cut -c 1,2` = "s3" ]; then
+  DEST_IS_S3=true
   if [ ! -x "$S3CMD" ]; then
     echo $NO_S3CMD; S3CMD_AVAIL=false
   elif [ ! -f "${HOME}/.s3cfg" ]; then
@@ -201,22 +201,76 @@ elif  [ `echo ${DEST} | cut -c 1,2` = "s3" ]; then
   else
     S3CMD_AVAIL=true
   fi
+else
+  DEST_IS_S3=false
 fi
 
-if [ ! -d ${LOGDIR} ]; then
-  echo "Attempting to create log directory ${LOGDIR} ..."
-  if ! mkdir -p ${LOGDIR}; then
-    echo "Log directory ${LOGDIR} could not be created by this user: ${USER}"
+check_variables ()
+{
+  if [[ ${ROOT} = "" || ${DEST} = "" || ${INCLIST} = "" || \
+         ${GPG_KEY} = "foobar_gpg_key" || \
+         ${PASSPHRASE} = "foobar_gpg_passphrase" || \
+         ${LOGDIR} = "/home/foobar_user_name/logs/test2/" || \
+         ( ${DEST_IS_S3} = true && ${AWS_ACCESS_KEY_ID} = "foobar_aws_key_id" ) || \
+         ( ${DEST_IS_S3} = true && ${AWS_SECRET_ACCESS_KEY} = "foobar_aws_access_key" ) ]]; then
+    echo -e ${CONFIG_VAR_MSG}
+    exit 1
+  fi
+}
+
+check_logdir()
+{
+  if [ ! -d ${LOGDIR} ]; then
+    echo "Attempting to create log directory ${LOGDIR} ..."
+    if ! mkdir -p ${LOGDIR}; then
+      echo "Log directory ${LOGDIR} could not be created by this user: ${USER}"
+      echo "Aborting..."
+      exit 1
+    else
+      echo "Directory ${LOGDIR} successfully created."
+    fi
+  elif [ ! -w ${LOGDIR} ]; then
+    echo "Log directory ${LOGDIR} is not writeable by this user: ${USER}"
     echo "Aborting..."
     exit 1
-  else
-    echo "Directory ${LOGDIR} successfully created."
   fi
-elif [ ! -w ${LOGDIR} ]; then
-  echo "Log directory ${LOGDIR} is not writeable by this user: ${USER}"
-  echo "Aborting..."
-  exit 1
-fi
+}
+
+email_logfile()
+{
+  if [ $EMAIL_TO ]; then
+      MAILCMD=$(which $MAIL)
+      if [ ! -x "$MAILCMD" ]; then
+          echo -e "Email couldn't be sent. ${MAIL} not available." >> ${LOGFILE}
+      else
+          EMAIL_SUBJECT=${EMAIL_SUBJECT:="duplicity-backup alert ${LOG_FILE}"}
+          if [ "$MAIL" = "ssmtp" ]; then
+            echo """Subject: ${EMAIL_SUBJECT}""" | cat - ${LOGFILE} | ${MAILCMD} -s ${EMAIL_TO}
+
+          elif ["$MAIL" = "mailx" ]; then
+            EMAIL_FROM=${EMAIL_FROM:+"-r ${EMAIL_FROM}"}
+            cat ${LOGFILE} | ${MAILCMD} -s """${EMAIL_SUBJECT}""" $EMAIL_FROM ${EMAIL_TO}
+          fi
+          echo -e "Email alert sent to ${EMAIL_TO} using ${MAIL}" >> ${LOGFILE}
+      fi
+  fi
+}
+
+get_lock()
+{
+  echo "Attempting to acquire lock ${LOCKFILE}" >> ${LOGFILE}
+  if ( set -o noclobber; echo "$$" > "${LOCKFILE}" ) 2> /dev/null; then
+      # The lock succeeded. Create a signal handler to remove the lock file when the process terminates.
+      trap 'EXITCODE=$?; echo "Removing lock. Exit code: ${EXITCODE}" >>${LOGFILE}; rm -f "${LOCKFILE}"' 0
+      echo "successfully acquired lock." >> ${LOGFILE}
+  else
+      # Write lock acquisition errors to log file and stderr
+      echo "lock failed, could not acquire ${LOCKFILE}" | tee -a ${LOGFILE} >&2
+      echo "lock held by $(cat ${LOCKFILE})" | tee -a ${LOGFILE} >&2
+      email_logfile
+      exit 2
+  fi
+}
 
 get_source_file_size()
 {
@@ -360,20 +414,12 @@ backup_this_script()
   echo -e "\nYou may want to write the above down and save it with the file."
 }
 
-check_variables ()
-{
-  if [[ ${ROOT} = "" || ${DEST} = "" || ${INCLIST} = "" || \
-        ${AWS_ACCESS_KEY_ID} = "foobar_aws_key_id" || \
-        ${AWS_SECRET_ACCESS_KEY} = "foobar_aws_access_key" || \
-        ${GPG_KEY} = "foobar_gpg_key" || \
-        ${PASSPHRASE} = "foobar_gpg_passphrase" ]]; then
-    echo -e ${CONFIG_VAR_MSG}
-    echo -e ${CONFIG_VAR_MSG}"\n--------    END    --------" >> ${LOGFILE}
-    exit 1
-  fi
-}
+check_variables
+check_logdir
 
-echo -e "--------    START duplicity-backup SCRIPT    --------\n" >> ${LOGFILE}
+echo -e "--------    START DUPLICITY-BACKUP SCRIPT    --------\n" >> ${LOGFILE}
+
+get_lock
 
 case "$1" in
   "--backup-script")
@@ -382,7 +428,6 @@ case "$1" in
   ;;
 
   "--full")
-    check_variables
     OPTION="full"
     include_exclude
     duplicity_backup
@@ -391,7 +436,6 @@ case "$1" in
   ;;
 
   "--verify")
-    check_variables
     OLDROOT=${ROOT}
     ROOT=${DEST}
     DEST=${OLDROOT}
@@ -411,7 +455,6 @@ case "$1" in
   ;;
 
   "--restore")
-    check_variables
     ROOT=$DEST
     OPTION="restore"
 
@@ -436,7 +479,6 @@ case "$1" in
   ;;
 
   "--restore-file")
-    check_variables
     ROOT=$DEST
     INCLUDE=
     EXCLUDE=
@@ -476,7 +518,6 @@ case "$1" in
   ;;
 
   "--list-current-files")
-    check_variables
     OPTION="list-current-files"
     ${DUPLICITY} ${OPTION} ${VERBOSITY} ${STATIC_OPTIONS} \
     $ENCRYPT \
@@ -485,7 +526,6 @@ case "$1" in
   ;;
 
   "--collection-status")
-    check_variables
     OPTION="collection-status"
     ${DUPLICITY} ${OPTION} ${VERBOSITY} ${STATIC_OPTIONS} \
     $ENCRYPT \
@@ -494,7 +534,6 @@ case "$1" in
   ;;
 
   "--backup")
-    check_variables
     include_exclude
     duplicity_backup
     duplicity_cleanup
@@ -504,7 +543,7 @@ case "$1" in
   *)
     echo -e "[Only show `basename $0` usage options]\n" >> ${LOGFILE}
     echo "  USAGE:
-      `basename $0` [-c configfile] [options]
+      `basename $0` [options]
 
     Options:
       --backup: runs an incremental backup
@@ -520,26 +559,18 @@ case "$1" in
 
     CURRENT SCRIPT VARIABLES:
     ========================
-      DEST (backup destination) = ${DEST}
-      INCLIST (directories included) = ${INCLIST[@]:0}
-      EXCLIST (directories excluded) = ${EXCLIST[@]:0}
+      DEST (backup destination)       = ${DEST}
+      INCLIST (directories included)  = ${INCLIST[@]:0}
+      EXCLIST (directories excluded)  = ${EXCLIST[@]:0}
       ROOT (root directory of backup) = ${ROOT}
+      LOGFILE (log file path)         = ${LOGFILE}
     "
   ;;
 esac
 
-echo -e "--------    END duplicity-backup SCRIPT    --------\n" >> ${LOGFILE}
+echo -e "--------    END DUPLICITY-BACKUP SCRIPT    --------\n" >> ${LOGFILE}
 
-if [ $EMAIL_TO ]; then
-  if [ ! -x "$MAIL" ]; then
-    echo -e "Email couldn't be sent. mailx not available." >> ${LOGFILE}
-  else
-    EMAIL_FROM=${EMAIL_FROM:+"-r ${EMAIL_FROM}"}
-    EMAIL_SUBJECT=${EMAIL_SUBJECT:="duplicity-backup Alert ${LOG_FILE}"}
-    cat ${LOGFILE} | ${MAIL} -s """${EMAIL_SUBJECT}""" $EMAIL_FROM ${EMAIL_TO}
-    echo -e "Email alert sent to ${EMAIL_TO} using ${MAIL}" >> ${LOGFILE}
-  fi
-fi
+email_logfile
 
 if [ ${ECHO} ]; then
   echo "TEST RUN ONLY: Check the logfile for command output."

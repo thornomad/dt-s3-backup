@@ -14,9 +14,9 @@ machine ever does go belly up.
 Optionally, you can set up an email address where the log file will be sent,
 which is useful when the script is used via cron.
 
-This version is a rewriting of the code originally written by Damon Timm, including many
-patches that have been brought to the original scripts by various forks
-on Github.
+This version is a rewriting of the code originally written by Damon Timm,
+including many patches that have been brought to the original scripts by
+various forks on Github.
 
 Latest version of the code available at:
 http://github.com/zertrin/duplicity-backup
@@ -50,6 +50,15 @@ REQUIREMENTS
 * Amazon S3 (optional)
 * s3cmd (optional)
 * mailx (optional)
+
+CONFIGURATION
+=============
+
+The configuration takes place directly in the script and is documented there.
+
+You can optionnaly specifiy a custom config file in the CONFIG parameter at the
+very beginning. Any parameter specified in this custom config file will
+override thoses specified in the script.
 
 COMMON USAGE EXAMPLES
 =====================

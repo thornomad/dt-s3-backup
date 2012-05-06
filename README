@@ -1,7 +1,7 @@
-*Active version of script*: <https://github.com/zertrin/duplicity-backup>
+*Active version of script*: https://github.com/zertrin/duplicity-backup
 
 NOTE (May 6th, 2012): I am no longer actively developing this script.  
-[zertrin](https://github.com/zertrin) has recently offered to take over for the time being.
+*zertrin* has recently offered to take over for the time being.
 I have not, myself, tested his fork or the merges he's made but more development 
 is always better than less. If you have pull requests or changes, use his branch.
 I will be quietly watching from the shadows. Good luck! -Damon

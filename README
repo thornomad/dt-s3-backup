@@ -1,9 +1,10 @@
-NOTE (Nov 13, 2011): I am currently not actively developing/managing this script.
-It was in working condition when I left it and has been forked/updated by a number
-of kind github community members.  Thank you all for your support, input, and time.
-I hope folks continue to find it useful.  I am not sure how succession is supposed
-to work in a github/open source project but I'm happy to hand over the reins at this
-point.  -Damon
+*Active version of script*: <https://github.com/zertrin/duplicity-backup>
+
+NOTE (May 6th, 2012): I am no longer actively developing this script.  
+[zertrin](https://github.com/zertrin) has recently offered to take over for the time being.
+I have not, myself, tested his fork or the merges he's made but more development 
+is always better than less. If you have pull requests or changes, use his branch.
+I will be quietly watching from the shadows. Good luck! -Damon
 
 ABOUT THIS SCRIPT
 =================

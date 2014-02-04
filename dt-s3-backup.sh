@@ -115,6 +115,14 @@ EMAIL_TO=
 EMAIL_FROM=
 EMAIL_SUBJECT=
 
+# command to use to send mail
+MAIL="mailx"
+#MAIL="ssmtp"
+
+# File to use as a lock. The lock is used to insure that only one instance of
+# the script is running at a time.
+LOCKFILE=${LOGDIR}backup.lock
+
 # TROUBLESHOOTING: If you are having any problems running this script it is
 # helpful to see the command output that is being generated to determine if the
 # script is causing a problem or if it is an issue with duplicity (or your
@@ -129,7 +137,6 @@ EMAIL_SUBJECT=
 LOGFILE="${LOGDIR}${LOG_FILE}"
 DUPLICITY="$(which duplicity)"
 S3CMD="$(which s3cmd)"
-MAIL="$(which mailx)"
 
 NO_S3CMD="WARNING: s3cmd is not installed, remote file \
 size information unavailable."
@@ -166,6 +173,42 @@ elif [ ! -w ${LOGDIR} ]; then
   echo "Aborting..."
   exit 1
 fi
+
+email_logfile()
+{
+	if [ $EMAIL_TO ]; then
+			MAILCMD=$(which $MAIL)
+			if [ ! -x "$MAILCMD" ]; then
+					echo -e "Email couldn't be sent. ${MAIL} not available." >> ${LOGFILE}
+			else
+					EMAIL_SUBJECT=${EMAIL_SUBJECT:="DT-S3 Alert ${LOG_FILE}"}
+					if [ "$MAIL" = "ssmtp" ]; then
+						echo """Subject: ${EMAIL_SUBJECT}""" | cat - ${LOGFILE} | ${MAILCMD} -s ${EMAIL_TO}
+
+					elif ["$MAIL" = "mailx" ]; then
+						EMAIL_FROM=${EMAIL_FROM:+"-r ${EMAIL_FROM}"}
+						cat ${LOGFILE} | ${MAILCMD} -s """${EMAIL_SUBJECT}""" $EMAIL_FROM ${EMAIL_TO}
+					fi
+					echo -e "Email alert sent to ${EMAIL_TO} using ${MAIL}" >> ${LOGFILE}
+			fi
+	fi
+}
+
+get_lock()
+{
+	echo "Attempting to acquire lock ${LOCKFILE}" >> ${LOGFILE}
+	if ( set -o noclobber; echo "$$" > "${LOCKFILE}" ) 2> /dev/null; then
+			# The lock succeeded. Create a signal handler to remove the lock file when the process terminates.
+			trap 'EXITCODE=$?; echo "Removing lock. Exit code: ${EXITCODE}" >>${LOGFILE}; rm -f "${LOCKFILE}"' 0
+			echo "successfully acquired lock." >> ${LOGFILE}
+	else
+			# Write lock acquisition errors to log file and stderr
+			echo "lock failed, could not acquire ${LOCKFILE}" | tee -a ${LOGFILE} >&2
+			echo "lock held by $(cat ${LOCKFILE})" | tee -a ${LOGFILE} >&2
+			email_logfile
+			exit 2
+	fi
+}
 
 get_source_file_size()
 {
@@ -298,6 +341,8 @@ check_variables ()
 }
 
 echo -e "--------    START DT-S3-BACKUP SCRIPT    --------\n" >> ${LOGFILE}
+
+get_lock
 
 if [ "$1" = "--backup-script" ]; then
   backup_this_script
@@ -435,16 +480,7 @@ fi
 
 echo -e "--------    END DT-S3-BACKUP SCRIPT    --------\n" >> ${LOGFILE}
 
-if [ $EMAIL_TO ]; then
-    if [ ! -x "$MAIL" ]; then
-        echo -e "Email couldn't be sent. mailx not available." >> ${LOGFILE}
-    else
-        EMAIL_FROM=${EMAIL_FROM:+"-r ${EMAIL_FROM}"}
-        EMAIL_SUBJECT=${EMAIL_SUBJECT:="DT-S3 Alert ${LOG_FILE}"}
-        cat ${LOGFILE} | ${MAIL} -s """${EMAIL_SUBJECT}""" $EMAIL_FROM ${EMAIL_TO}
-        echo -e "Email alert sent to ${EMAIL_TO} using ${MAIL}" >> ${LOGFILE}
-    fi
-fi
+email_logfile
 
 if [ ${ECHO} ]; then
   echo "TEST RUN ONLY: Check the logfile for command output."
